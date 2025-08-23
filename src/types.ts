@@ -37,7 +37,7 @@ export type ReviewQuality = typeof ReviewQuality[keyof typeof ReviewQuality];
 
 // SM-2 Algorithm types
 export type Grade = "again" | "hard" | "good" | "easy";
-export type Phase = 'learning' | 'review' | 'relearning';
+export type Phase = 'learning' | 'graduating' | 'review' | 'relearning';
 
 export type ReviewState = {
   ef: number;           // ease factor (start 2.5)

@@ -257,53 +257,50 @@ function App() {
               <h1 className="text-left">Profile</h1>
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
-                  <span className="text-md text-silver-custom">Total</span>
-                  <span className="text-md text-light-custom font-medium">{cards.length}</span>
+                  <span className="text-sm text-silver-custom">Total</span>
+                  <span className="text-sm text-light-custom font-medium">{cards.length}</span>
                 </div>
                 <div className="w-px h-4 border-granite-custom border-l"></div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-md text-silver-custom">Due</span>
-                  <span className="text-md text-light-custom font-medium">{dueCards.length}</span>
+                  <span className="text-sm text-silver-custom">Due</span>
+                  <span className="text-sm text-light-custom font-medium">{dueCards.length}</span>
                 </div>
                 <div className="w-px h-4 border-granite-custom border-l"></div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-md text-silver-custom">Review</span>
-                  <span className="text-md text-light-custom font-medium">{todaysReviews}</span>
+                  <span className="text-sm text-silver-custom">Review</span>
+                  <span className="text-sm text-light-custom font-medium">{todaysReviews}</span>
                 </div>
               </div>
             </div>
           )}
           {activeTab === 'dashboard' && (
-              <div className="space-y-6">
-
-
-
-            <div className="mt-24">
-              <h3 className="text-md text-silver-custom text-left mb-4">Recent cards</h3>
-              {cards.length === 0 ? (
-                <p className="text-gray-500">No cards yet. Add your first card to get started!</p>
-              ) : (
-                  <div className="space-y-0">
-                    {cards.slice(0, 5).map((card, index) => (
-                      <div key={card.id} className={`flex justify-between items-center py-4 ${index < cards.slice(0, 5).length - 1 ? 'border-b border-granite-custom' : ''}`}>
-                        <div className="flex items-center flex-1">
-                          <div className="w-20 text-left">
-                            <span className="font-medium text-light-custom">{card.hanzi}</span>
+            <div className="space-y-6">
+              <div className="mt-24">
+                <h3 className="text-sm text-silver-custom text-left mb-4">Recent cards</h3>
+                {cards.length === 0 ? (
+                  <p className="text-gray-custom">No cards yet. Add your first card to get started!</p>
+                ) : (
+                    <div className="space-y-0">
+                      {cards.slice(0, 5).map((card, index) => (
+                        <div key={card.id} className={`flex justify-between items-center py-4 ${index < cards.slice(0, 5).length - 1 ? 'border-b border-granite-custom' : ''}`}>
+                          <div className="flex items-center flex-1">
+                            <div className="w-20 text-left">
+                              <span className="font-medium text-light-custom">{card.hanzi}</span>
+                            </div>
+                            <div className="flex-1 text-left">
+                              <span className="text-gray-custom">{card.english}</span>
+                            </div>
                           </div>
-                          <div className="flex-1 text-left">
-                            <span className="text-gray-custom">{card.english}</span>
+                          <div className="text-sm text-gray-custom w-20 text-right">
+                            {card.reps} reviews
                           </div>
                         </div>
-                        <div className="text-sm text-gray-custom w-20 text-right">
-                          {card.reps} reviews
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
           {activeTab === 'review' && (
             <div className="h-[calc(100vh-140px)] overflow-y-auto">
@@ -393,7 +390,7 @@ function App() {
               
               <div className="space-y-0 max-h-140 overflow-y-auto">
                 {allCards.length === 0 ? (
-                  <p className="text-gray-500">No cards yet. Add your first card to get started!</p>
+                  <p className="text-gray-custom">No cards yet. Add your first card to get started!</p>
                 ) : (
                   allCards.map((card, index) => (
                     <div key={card.id} className={`flex justify-between items-center py-4 ${index < allCards.length - 1 ? 'border-b border-granite-custom' : ''}`}>

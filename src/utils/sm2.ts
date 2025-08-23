@@ -57,13 +57,13 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
         // Advance to next learning step
         return { ...state, ef, reps, lapses, phase, stepIndex: stepIndex + 1, due: now + next };
       } else {
-        // Graduate to review
+        // Graduate to graduation review (not directly to review)
         return {
           ...state,
           ef,
           reps: 1,
           lapses,
-          phase: 'review',
+          phase: 'graduating', // NEW: graduation review phase
           intervalDays: graduatingIntervalDays,
           due: now + graduatingIntervalDays * 86_400_000,
           stepIndex: undefined,
@@ -77,11 +77,62 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
       ef,
       reps: 1,
       lapses,
-      phase: 'review',
+      phase: 'graduating', // NEW: graduation review phase
       intervalDays: easyGraduatingIntervalDays,
       due: now + easyGraduatingIntervalDays * 86_400_000,
       stepIndex: undefined,
     };
+  }
+
+  // === PHASE: GRADUATION REVIEW === (NEW PHASE)
+  if (phase === 'graduating') {
+    if (grade === 'again') {
+      // Failed graduation → back to learning phase
+      lapses += 1;
+      return { 
+        ...state, 
+        ef, 
+        reps: 0, 
+        lapses, 
+        phase: 'learning', 
+        stepIndex: 0, 
+        due: now + learningStepsMs[0],
+        intervalDays: 0
+      };
+    }
+
+    if (grade === 'hard') {
+      // Hard on graduation → extend graduation interval
+      intervalDays = Math.max(1, Math.ceil(intervalDays * hardMultiplier));
+      return { 
+        ...state, 
+        ef, 
+        reps, 
+        lapses, 
+        phase, 
+        intervalDays, 
+        due: now + intervalDays * 86_400_000
+      };
+    }
+
+    if (grade === 'good' || grade === 'easy') {
+      // Passed graduation → enter main review cycle
+      if (grade === 'easy') {
+        ef += 0.15; // Bonus for easy graduation
+        intervalDays = Math.max(1, Math.ceil(intervalDays * easyBonus));
+      }
+      
+      return {
+        ...state,
+        ef,
+        reps,
+        lapses,
+        phase: 'review', // Finally enter review phase
+        intervalDays,
+        due: now + intervalDays * 86_400_000,
+        stepIndex: undefined,
+      };
+    }
   }
 
   // === PHASE: REVIEW ===
