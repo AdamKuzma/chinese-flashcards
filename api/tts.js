@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       input: { text },
       voice: {
         languageCode: 'zh-CN',
-        name: 'zh-CN-Wavenet-A', // High quality female Chinese voice
+        // Use a valid Chinese voice (Wavenet voices may not be available in all regions)
         ssmlGender: 'FEMALE',
       },
       audioConfig: {
@@ -58,9 +58,25 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('TTS Error:', error);
+    
+    // More detailed error logging
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      projectId: process.env.GOOGLE_PROJECT_ID ? 'Set' : 'Missing',
+      clientEmail: process.env.GOOGLE_CLIENT_EMAIL ? 'Set' : 'Missing',
+      privateKey: process.env.GOOGLE_PRIVATE_KEY ? 'Set' : 'Missing'
+    });
+    
     res.status(500).json({ 
       error: 'Failed to generate speech',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message,
+      debugInfo: {
+        hasProjectId: !!process.env.GOOGLE_PROJECT_ID,
+        hasClientEmail: !!process.env.GOOGLE_CLIENT_EMAIL,
+        hasPrivateKey: !!process.env.GOOGLE_PRIVATE_KEY,
+        errorType: error.constructor.name
+      }
     });
   }
 }
