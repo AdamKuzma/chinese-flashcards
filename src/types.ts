@@ -53,7 +53,7 @@ export interface Deck {
   id: string;
   name: string;
   description?: string;
-  cards: Card[];
+  cardIds: string[]; // Store card IDs instead of full Card objects
   createdAt: number;
   updatedAt: number;
 }

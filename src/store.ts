@@ -25,7 +25,7 @@ interface FlashcardStore {
   getCard: (id: string) => Card | undefined;
 
   // Deck management
-  addDeck: (deck: Omit<Deck, 'id' | 'createdAt' | 'updatedAt' | 'cards'>) => void;
+  addDeck: (deck: Omit<Deck, 'id' | 'createdAt' | 'updatedAt' | 'cardIds'>) => void;
   updateDeck: (id: string, updates: Partial<Deck>) => void;
   deleteDeck: (id: string) => void;
   getDeck: (id: string) => Deck | undefined;
@@ -104,7 +104,16 @@ export const useFlashcardStore = create<FlashcardStore>()(
           updatedAt: Date.now(),
         },
       ],
-      decks: [],
+      decks: [
+        {
+          id: 'default-deck',
+          name: 'Default Deck',
+          description: 'Your main collection of Chinese flashcards',
+          cardIds: ['sample-1', 'sample-2', 'sample-3'],
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ],
       currentCardIndex: 0,
       isShowingAnswer: false,
       isReviewing: false,
@@ -152,7 +161,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           // Also remove from decks
           decks: state.decks.map((deck) => ({
             ...deck,
-            cards: deck.cards.filter((card) => card.id !== id),
+            cardIds: deck.cardIds.filter((cardId) => cardId !== id),
             updatedAt: Date.now(),
           })),
         }));
@@ -168,7 +177,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
         const newDeck: Deck = {
           ...deckData,
           id: crypto.randomUUID(),
-          cards: [],
+          cardIds: [],
           createdAt: now,
           updatedAt: now,
         };
@@ -207,7 +216,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
             deck.id === deckId
               ? {
                   ...deck,
-                  cards: [...deck.cards, card],
+                  cardIds: [...deck.cardIds, cardId],
                   updatedAt: Date.now(),
                 }
               : deck
@@ -221,7 +230,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
             deck.id === deckId
               ? {
                   ...deck,
-                  cards: deck.cards.filter((card) => card.id !== cardId),
+                  cardIds: deck.cardIds.filter((id) => id !== cardId),
                   updatedAt: Date.now(),
                 }
               : deck
@@ -351,7 +360,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
         let cardsToFilter = allCards;
         if (deckId) {
           const deck = get().getDeck(deckId);
-          cardsToFilter = deck ? deck.cards : [];
+          cardsToFilter = deck ? allCards.filter(card => deck.cardIds.includes(card.id)) : [];
         }
 
         const dueCards = cardsToFilter.filter((card) => card.due <= now && !card.suspended);
@@ -374,7 +383,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
         let cardsToFilter = allCards;
         if (deckId) {
           const deck = get().getDeck(deckId);
-          cardsToFilter = deck ? deck.cards : [];
+          cardsToFilter = deck ? allCards.filter(card => deck.cardIds.includes(card.id)) : [];
         }
 
         // If we've gone through all original cards, show requeued cards
