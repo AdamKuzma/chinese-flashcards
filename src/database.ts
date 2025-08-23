@@ -10,7 +10,7 @@ export class FlashcardDatabase extends Dexie {
     super('FlashcardDB');
 
     this.version(1).stores({
-      cards: 'id, hanzi, pinyin, english, due, interval, ease, reps, createdAt, updatedAt',
+      cards: 'id, hanzi, pinyin, english, due, intervalDays, ef, reps, phase, createdAt, updatedAt',
       decks: 'id, name, description, createdAt, updatedAt',
       reviews: 'cardId, quality, timestamp',
     });
@@ -51,27 +51,36 @@ export const dbOperations = {
         pinyin: 'nǐ hǎo',
         english: 'hello',
         due: Date.now() - 1000, // 1 second ago to ensure it's due
-        interval: 1,
-        ease: 2.5,
+        intervalDays: 0,
+        ef: 2.5,
         reps: 0,
+        lapses: 0,
+        phase: 'learning',
+        stepIndex: 0,
       },
       {
         hanzi: '谢谢',
         pinyin: 'xiè xiè',
         english: 'thank you',
         due: Date.now() - 1000, // 1 second ago to ensure it's due
-        interval: 1,
-        ease: 2.5,
+        intervalDays: 0,
+        ef: 2.5,
         reps: 0,
+        lapses: 0,
+        phase: 'learning',
+        stepIndex: 0,
       },
       {
         hanzi: '再见',
         pinyin: 'zài jiàn',
         english: 'goodbye',
         due: Date.now() - 1000, // 1 second ago to ensure it's due
-        interval: 1,
-        ease: 2.5,
+        intervalDays: 0,
+        ef: 2.5,
         reps: 0,
+        lapses: 0,
+        phase: 'learning',
+        stepIndex: 0,
       },
     ];
 

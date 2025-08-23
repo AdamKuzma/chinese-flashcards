@@ -23,7 +23,6 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
 
   // === PHASE: LEARNING ===
   if (phase === 'learning') {
-    const cur = learningStepsMs[stepIndex];
     const next = learningStepsMs[stepIndex + 1];
 
     if (grade === 'again') {
@@ -35,7 +34,6 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
     if (grade === 'hard') {
       // Hard: stays on current step but gives progressively longer intervals
       // Anki behavior: <6 minutes for new cards, with some progression
-      const baseMs = learningStepsMs[stepIndex];
       
       // Progressive Hard intervals: 1.5min, 3min, 5min (under 6min limit)
       // Use reps to track how many times Hard was pressed on this step
