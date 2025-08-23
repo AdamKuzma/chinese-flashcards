@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Flashcard, Toast } from './components';
+import { Flashcard, Toast, HelpModal } from './components';
 import { dbOperations } from './database.ts';
 import { ReviewQuality } from './types.ts';
+import { formatTimeUntilDue } from './utils';
 import './App.css';
 
 function App() {
@@ -14,7 +15,6 @@ function App() {
     selectedDeckId,
     reviewAll,
     startReview,
-    stopReview,
     showAnswer,
     reviewCard,
     getDueCards,
@@ -27,16 +27,24 @@ function App() {
     getTodaysReviewCount,
   } = useFlashcardStore();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card'>(() => {
+    const savedTab = localStorage.getItem('activeTab');
+    return (savedTab as 'dashboard' | 'review' | 'browse' | 'add-card') || 'dashboard';
+  });
   const [newCardForm, setNewCardForm] = useState({
     hanzi: '',
     pinyin: '',
+    english: '',
+  });
+  const [validationErrors, setValidationErrors] = useState({
+    hanzi: '',
     english: '',
   });
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [editingCard, setEditingCard] = useState<{id: string, field: 'hanzi' | 'english'} | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Initialize sample data on first load
   useEffect(() => {
@@ -59,20 +67,67 @@ function App() {
   const currentCard = cardsToReview[currentCardIndex];
   const todaysReviews = getTodaysReviewCount();
 
+  // Validation functions
+  const checkForDuplicateCard = (field: 'hanzi' | 'english', value: string) => {
+    if (!value.trim()) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }));
+      return;
+    }
+
+    const isDuplicate = cards.some(card => 
+      card[field].toLowerCase().trim() === value.toLowerCase().trim()
+    );
+
+    if (isDuplicate) {
+      const fieldName = field === 'hanzi' ? 'Front' : 'Back';
+      setValidationErrors(prev => ({ 
+        ...prev, 
+        [field]: `This ${fieldName} text already exists in another card` 
+      }));
+    } else {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleInputBlur = (field: 'hanzi' | 'english', value: string) => {
+    checkForDuplicateCard(field, value);
+  };
+
   const handleAddCard = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCardForm.hanzi || !newCardForm.english) return;
+    
+    // Check for duplicates before submitting
+    const hanziExists = cards.some(card => 
+      card.hanzi.toLowerCase().trim() === newCardForm.hanzi.toLowerCase().trim()
+    );
+    const englishExists = cards.some(card => 
+      card.english.toLowerCase().trim() === newCardForm.english.toLowerCase().trim()
+    );
+
+    if (hanziExists || englishExists) {
+      if (hanziExists) {
+        setValidationErrors(prev => ({ 
+          ...prev, 
+          hanzi: 'This Front text already exists in another card' 
+        }));
+      }
+      if (englishExists) {
+        setValidationErrors(prev => ({ 
+          ...prev, 
+          english: 'This Back text already exists in another card' 
+        }));
+      }
+      return;
+    }
 
     addCard({
       hanzi: newCardForm.hanzi,
       pinyin: newCardForm.pinyin || '', // Optional field, default to empty string
       english: newCardForm.english,
-      due: Date.now() - 1000, // 1 second ago to ensure it's immediately due for review
-      interval: 1,
-      ease: 2.5,
-      reps: 0,
     });
     setNewCardForm({ hanzi: '', pinyin: '', english: '' });
+    setValidationErrors({ hanzi: '', english: '' });
     
     // Show toast notification
     showToastMessage('Card added');
@@ -82,18 +137,20 @@ function App() {
     const cardsAvailable = reviewAllCards ? allCards.length > 0 : dueCards.length > 0;
     if (cardsAvailable) {
       startReview(undefined, reviewAllCards);
-      setActiveTab('review');
+      handleTabChange('review');
     }
   };
 
-  const handleStopReview = () => {
-    stopReview();
-    setActiveTab('dashboard');
-  };
+
 
   const showToastMessage = (message: string) => {
     setToastMessage(message);
     setShowToast(true);
+  };
+
+  const handleTabChange = (tab: 'dashboard' | 'review' | 'browse' | 'add-card') => {
+    setActiveTab(tab);
+    localStorage.setItem('activeTab', tab);
   };
 
   const hideToast = () => {
@@ -148,7 +205,7 @@ function App() {
         <div className="w-[700px] mx-auto px-4 py-4">
                      <nav className="mt-4 flex justify-center border-b border-granite-custom">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => handleTabChange('dashboard')}
               className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'dashboard'
                   ? 'text-light-custom border-light-custom'
@@ -158,7 +215,7 @@ function App() {
               Profile
             </button>
             <button
-              onClick={() => setActiveTab('review')}
+              onClick={() => handleTabChange('review')}
               className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'review'
                   ? 'text-light-custom border-light-custom'
@@ -168,7 +225,7 @@ function App() {
               Review 
             </button>
             <button
-              onClick={() => setActiveTab('browse')}
+              onClick={() => handleTabChange('browse')}
               className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'browse'
                   ? 'text-light-custom border-light-custom'
@@ -178,7 +235,7 @@ function App() {
               Browse
             </button>
             <button
-              onClick={() => setActiveTab('add-card')}
+              onClick={() => handleTabChange('add-card')}
               className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'add-card'
                   ? 'text-light-custom border-light-custom'
@@ -193,24 +250,24 @@ function App() {
 
       {/* Main Content */}
 
-      <main className="w-[700px] mx-auto px-4 py-8">
+      <main className="w-[700px] mx-auto px-4 pt-8">
         <div className="w-full">
           {activeTab === 'dashboard' && (
             <div className="flex justify-between items-center">
               <h1 className="text-left">Profile</h1>
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
-                  <span className="text-md text-silver-custom">Total Cards</span>
+                  <span className="text-md text-silver-custom">Total</span>
                   <span className="text-md text-light-custom font-medium">{cards.length}</span>
                 </div>
                 <div className="w-px h-4 border-granite-custom border-l"></div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-md text-silver-custom">Due Today</span>
+                  <span className="text-md text-silver-custom">Due</span>
                   <span className="text-md text-light-custom font-medium">{dueCards.length}</span>
                 </div>
                 <div className="w-px h-4 border-granite-custom border-l"></div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-md text-silver-custom">Reviews Today</span>
+                  <span className="text-md text-silver-custom">Review</span>
                   <span className="text-md text-light-custom font-medium">{todaysReviews}</span>
                 </div>
               </div>
@@ -249,7 +306,7 @@ function App() {
         )}
 
           {activeTab === 'review' && (
-            <>
+            <div className="h-[calc(100vh-140px)] overflow-y-auto">
               <div className="space-y-6">
             {isReviewing && cardsToReview.length > 0 && currentCard ? (
               <>
@@ -270,20 +327,7 @@ function App() {
                   showNavigation={cardsToReview.length > 1}
                 />
 
-                {currentCardIndex >= cardsToReview.length && (
-                  <div className="text-center py-12">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">All caught up!</h3>
-                    <p className="text-gray-600 mb-4">
-                      {reviewAll ? 'You\'ve reviewed all cards!' : 'No more cards due for review today.'}
-                    </p>
-                    <button
-                      onClick={handleStopReview}
-                      className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                    >
-                      Back to Dashboard
-                    </button>
-                  </div>
-                )}
+
               </>
             ) : (
               <div className="text-center py-12">
@@ -317,7 +361,7 @@ function App() {
               </div>
             )}
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'browse' && (
@@ -328,7 +372,26 @@ function App() {
                   {allCards.length} total cards
                 </div>
               </div>
-              <div className="space-y-0">
+              
+              {/* Column Headers */}
+              {allCards.length > 0 && (
+                <div className="flex justify-between items-center py-3 border-b-1 border-granite-custom">
+                  <div className="flex items-center flex-1">
+                    <div className="w-20 text-left">
+                      <span className="text-xs text-silver-custom font-medium">FRONT</span>
+                    </div>
+                    <div className="flex-1 text-left">
+                      <span className="text-xs text-silver-custom font-medium">BACK</span>
+                    </div>
+                  </div>
+                  <div className="w-42 text-right mr-8">
+                    <span className="text-xs text-silver-custom font-medium">NEXT REVIEW</span>
+                  </div>
+                  <div className="w-8"></div>
+                </div>
+              )}
+              
+              <div className="space-y-0 max-h-140 overflow-y-auto">
                 {allCards.length === 0 ? (
                   <p className="text-gray-500">No cards yet. Add your first card to get started!</p>
                 ) : (
@@ -376,6 +439,11 @@ function App() {
                           )}
                         </div>
                       </div>
+                      <div className="w-42 text-right mr-8">
+                        <span className={`text-sm ${card.due <= Date.now() ? 'text-silver-custom' : 'text-gray-custom'}`}>
+                          {formatTimeUntilDue(card.due)}
+                        </span>
+                      </div>
                       <button
                         onClick={() => handleDeleteCard(card.id)}
                         className="w-8 h-8 flex items-center justify-center text-gray-custom hover:text-light-custom hover:bg-granite-custom rounded"
@@ -405,11 +473,23 @@ function App() {
                       <input
                         type="text"
                         value={newCardForm.hanzi}
-                        onChange={(e) => setNewCardForm({ ...newCardForm, hanzi: e.target.value })}
-                        className="input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none"
+                        onChange={(e) => {
+                          setNewCardForm({ ...newCardForm, hanzi: e.target.value });
+                          // Clear error when user starts typing
+                          if (validationErrors.hanzi) {
+                            setValidationErrors(prev => ({ ...prev, hanzi: '' }));
+                          }
+                        }}
+                        onBlur={(e) => handleInputBlur('hanzi', e.target.value)}
+                        className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none ${
+                          validationErrors.hanzi ? 'ring-1 ring-red-500' : ''
+                        }`}
                         placeholder="你好"
                         required
                       />
+                      {validationErrors.hanzi && (
+                        <p className="text-red-400 text-xs mt-1 text-left">{validationErrors.hanzi}</p>
+                      )}
                   </div>
                   <div>
                     <label className="block text-xs text-silver-custom mb-1 text-left">
@@ -418,18 +498,30 @@ function App() {
                       <input
                         type="text"
                         value={newCardForm.english}
-                        onChange={(e) => setNewCardForm({ ...newCardForm, english: e.target.value })}
-                        className="input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none"
+                        onChange={(e) => {
+                          setNewCardForm({ ...newCardForm, english: e.target.value });
+                          // Clear error when user starts typing
+                          if (validationErrors.english) {
+                            setValidationErrors(prev => ({ ...prev, english: '' }));
+                          }
+                        }}
+                        onBlur={(e) => handleInputBlur('english', e.target.value)}
+                        className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none ${
+                          validationErrors.english ? 'ring-1 ring-red-500' : ''
+                        }`}
                         placeholder="hello"
                         required
                       />
+                      {validationErrors.english && (
+                        <p className="text-red-400 text-xs mt-1 text-left">{validationErrors.english}</p>
+                      )}
                   </div>
                 </div>
                 <div className="border-t border-granite-custom mt-12 pt-6">
                   <div className="flex justify-end space-x-3">
                     <button
                       type="button"
-                      onClick={() => setActiveTab('dashboard')}
+                      onClick={() => handleTabChange('dashboard')}
                       className="btn-cancel px-4 py-1.5 text-light-custom rounded-lg"
                     >
                       Cancel
@@ -454,6 +546,22 @@ function App() {
         message={toastMessage}
         show={showToast}
         onHide={hideToast}
+      />
+
+      {/* Help Button - Fixed position at bottom right */}
+      <button
+        onClick={() => setShowHelpModal(true)}
+        className="fixed bottom-6 right-6 w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items-center justify-center transition-colors z-40"
+        aria-label="Help"
+        title="Help & Documentation"
+      >
+        <span className="text-md font-medium">?</span>
+      </button>
+
+      {/* Help Modal */}
+      <HelpModal 
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
       />
     </div>
   );

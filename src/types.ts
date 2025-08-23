@@ -5,12 +5,19 @@ export interface Card {
   hanzi: string;        // Chinese characters
   pinyin: string;       // Romanization
   english: string;      // English translation
-  due: number;          // Timestamp for next review
-  interval: number;     // Current interval in days
-  ease: number;         // Ease factor (typically 2.5)
-  reps: number;         // Number of repetitions
+  
+  // SM-2 Algorithm fields
+  ef: number;           // ease factor (start 2.5)
+  intervalDays: number; // days (only for review/relearning)
+  reps: number;         // consecutive correct reviews
+  lapses: number;       // number of lapses/failures
+  due: number;          // ms epoch for next review
+  phase: Phase;         // learning phase
+  stepIndex?: number;   // index into learningSteps
+  
   createdAt: number;    // When the card was created
   updatedAt: number;    // When the card was last updated
+  suspended?: boolean;  // For leech management
 }
 
 export interface CardReview {
@@ -20,13 +27,27 @@ export interface CardReview {
 }
 
 export const ReviewQuality = {
-  AGAIN: 0,     // Complete failure - reset progress
-  HARD: 1,      // Struggled but remembered
-  GOOD: 2,      // Remembered with some effort
-  EASY: 3       // Perfect recall
+  AGAIN: 'again',    // Complete failure - reset progress
+  HARD: 'hard',      // Struggled, guessed, or hesitated
+  GOOD: 'good',      // Remembered with normal effort
+  EASY: 'easy'       // Perfect recall, too easy
 } as const;
 
 export type ReviewQuality = typeof ReviewQuality[keyof typeof ReviewQuality];
+
+// SM-2 Algorithm types
+export type Grade = "again" | "hard" | "good" | "easy";
+export type Phase = 'learning' | 'review' | 'relearning';
+
+export type ReviewState = {
+  ef: number;           // ease factor (start 2.5)
+  intervalDays: number; // only for review/relearning
+  reps: number;         // consecutive correct reviews
+  lapses: number;       // number of times the card was forgotten
+  due: number;          // ms epoch
+  phase: Phase;         // learning phase
+  stepIndex?: number;   // index into learningSteps
+};
 
 export interface Deck {
   id: string;

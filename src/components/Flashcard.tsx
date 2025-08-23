@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Card } from '../types.ts';
 import { ReviewQuality } from '../types.ts';
+import { getCardDebugInfo } from '../utils';
 
 interface FlashcardProps {
   card: Card;
@@ -17,20 +18,9 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   isShowingAnswer,
   onShowAnswer,
   onReview,
-  onNext,
-  onPrevious,
-  showNavigation = true,
 }) => {
-  const formatDueDate = (timestamp: number) => {
-    const now = Date.now();
-    const diff = timestamp - now;
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-
-    if (days < 0) return 'Overdue';
-    if (days === 0) return 'Due today';
-    if (days === 1) return 'Due tomorrow';
-    return `Due in ${days} days`;
-  };
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const debugInfo = getCardDebugInfo(card);
 
   return (
     <div className="max-w-2xl mx-auto px-16">
@@ -68,6 +58,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         </div>
       )}
 
+
+
       {/* Card Info */}
       {/* <div className="text-sm text-gray-600 mb-4 text-center">
         <div>Due: {formatDueDate(card.due)}</div>
@@ -104,6 +96,58 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             >
               Easy
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Debug Info Toggle */}
+      <div className="flex justify-center mt-6 mb-4">
+        <button
+          onClick={() => setShowDebugInfo(!showDebugInfo)}
+          className="text-xs text-silver-custom hover:text-light-custom"
+        >
+          {showDebugInfo ? '▲ Hide' : '▼ Show'} Algorithm Details
+        </button>
+      </div>
+
+      {/* Debug Information */}
+      {showDebugInfo && (
+        <div className="bg-granite-custom rounded-lg p-4 mb-6 text-left">
+          <h4 className="text-sm font-medium text-light-custom mb-3">SM-2 Algorithm Details</h4>
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-silver-custom">Next Review:</span>
+              <div className="text-light-custom font-medium">{debugInfo.nextReview}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">Phase:</span>
+              <div className="text-light-custom font-medium capitalize">{debugInfo.phase}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">Ease Factor:</span>
+              <div className="text-light-custom font-medium">{debugInfo.easeFactor}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">Interval:</span>
+              <div className="text-light-custom font-medium">
+                {debugInfo.phase === 'learning' || debugInfo.phase === 'relearning' 
+                  ? `Step ${(debugInfo.stepIndex ?? 0) + 1}`
+                  : `${debugInfo.intervalDays} day${debugInfo.intervalDays !== 1 ? 's' : ''}`
+                }
+              </div>
+            </div>
+            <div>
+              <span className="text-silver-custom">Consecutive Correct:</span>
+              <div className="text-light-custom font-medium">{debugInfo.consecutiveCorrect}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">Total Lapses:</span>
+              <div className="text-light-custom font-medium">{debugInfo.lapses}</div>
+            </div>
+          </div>
+          <div className="mt-3">
+            <span className="text-silver-custom text-xs">Exact due time:</span>
+            <div className="text-light-custom text-xs font-mono">{debugInfo.exactDueTime}</div>
           </div>
         </div>
       )}

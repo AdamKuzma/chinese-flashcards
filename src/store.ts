@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Card, Deck } from './types.ts';
 import { ReviewQuality } from './types.ts';
+import { sm2, isLeech, initializeCard } from './utils/sm2';
 
 interface FlashcardStore {
   // Data
@@ -14,10 +15,11 @@ interface FlashcardStore {
   isReviewing: boolean;
   selectedDeckId?: string;
   reviewAll?: boolean;
+  requeuedCards: string[]; // Card IDs that need to be reviewed again in current session
 
   // Actions
   // Card management
-  addCard: (card: Omit<Card, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addCard: (card: Omit<Card, 'id' | 'createdAt' | 'updatedAt' | 'ef' | 'intervalDays' | 'reps' | 'lapses' | 'due' | 'phase' | 'stepIndex' | 'suspended'>) => void;
   updateCard: (id: string, updates: Partial<Card>) => void;
   deleteCard: (id: string) => void;
   getCard: (id: string) => Card | undefined;
@@ -48,9 +50,7 @@ interface FlashcardStore {
   previousCard: () => void;
 }
 
-// Spaced repetition algorithm constants
-const INITIAL_EASE = 2.5;
-const MIN_EASE = 1.3;
+// SM-2 Algorithm is now handled in utils/sm2.ts
 
 
 export const useFlashcardStore = create<FlashcardStore>()(
@@ -63,10 +63,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
           hanzi: '你好',
           pinyin: 'nǐ hǎo',
           english: 'hello',
-          due: Date.now() - 1000, // 1 second ago to ensure it's due
-          interval: 1,
-          ease: 2.5,
+          ef: 2.5,
+          intervalDays: 0,
           reps: 0,
+          lapses: 0,
+          due: Date.now() - 1000,
+          phase: 'learning' as const,
+          stepIndex: 0,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         },
@@ -75,10 +78,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
           hanzi: '谢谢',
           pinyin: 'xiè xiè',
           english: 'thank you',
-          due: Date.now() - 1000, // 1 second ago to ensure it's due
-          interval: 1,
-          ease: 2.5,
+          ef: 2.5,
+          intervalDays: 0,
           reps: 0,
+          lapses: 0,
+          due: Date.now() - 1000,
+          phase: 'learning' as const,
+          stepIndex: 0,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         },
@@ -87,10 +93,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
           hanzi: '再见',
           pinyin: 'zài jiàn',
           english: 'goodbye',
-          due: Date.now() - 1000, // 1 second ago to ensure it's due
-          interval: 1,
-          ease: 2.5,
+          ef: 2.5,
+          intervalDays: 0,
           reps: 0,
+          lapses: 0,
+          due: Date.now() - 1000,
+          phase: 'learning' as const,
+          stepIndex: 0,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         },
@@ -101,17 +110,23 @@ export const useFlashcardStore = create<FlashcardStore>()(
       isReviewing: false,
       selectedDeckId: undefined,
       reviewAll: false,
+      requeuedCards: [],
 
       // Card management
       addCard: (cardData) => {
         const now = Date.now();
+        const sm2State = initializeCard();
+        
         const newCard: Card = {
           ...cardData,
           id: crypto.randomUUID(),
-          due: cardData.due || now, // Use provided due date or current time
-          interval: cardData.interval || 1,
-          ease: cardData.ease || INITIAL_EASE,
-          reps: cardData.reps || 0,
+          ef: sm2State.ef,
+          intervalDays: sm2State.intervalDays,
+          reps: sm2State.reps,
+          lapses: sm2State.lapses,
+          due: sm2State.due,
+          phase: sm2State.phase,
+          stepIndex: sm2State.stepIndex,
           createdAt: now,
           updatedAt: now,
         };
@@ -222,6 +237,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           currentCardIndex: 0,
           isShowingAnswer: false,
           reviewAll: reviewAll,
+          requeuedCards: [],
         });
       },
 
@@ -232,6 +248,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           currentCardIndex: 0,
           isShowingAnswer: false,
           reviewAll: false,
+          requeuedCards: [],
         });
       },
 
@@ -253,34 +270,23 @@ export const useFlashcardStore = create<FlashcardStore>()(
         if (!currentCard) return;
 
         const now = Date.now();
-        let { interval, ease, reps } = currentCard;
-
-        // Update ease factor
-        ease = Math.max(MIN_EASE, ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
-
-        // Calculate new interval and due date based on quality
-        let due: number;
         
-        if (quality === ReviewQuality.AGAIN) {
-          // Show again immediately (no time delay)
-          due = now;
-          reps = Math.max(0, reps - 1);
-        } else if (quality === ReviewQuality.HARD) {
-          // Show again in 5 minutes
-          due = now + (5 * 60 * 1000);
-          reps += 1;
-        } else if (quality === ReviewQuality.GOOD) {
-          // Show again in 10 minutes
-          due = now + (10 * 60 * 1000);
-          reps += 1;
-        } else if (quality === ReviewQuality.EASY) {
-          // Show again in 1 day
-          due = now + (1 * 24 * 60 * 60 * 1000);
-          reps += 1;
-        } else {
-          // Fallback
-          due = now + (interval * 24 * 60 * 60 * 1000);
-        }
+        // Create current review state
+        const currentState = {
+          ef: currentCard.ef,
+          intervalDays: currentCard.intervalDays,
+          reps: currentCard.reps,
+          lapses: currentCard.lapses,
+          due: currentCard.due,
+          phase: currentCard.phase,
+          stepIndex: currentCard.stepIndex
+        };
+
+        // Calculate new state using SM-2
+        const newState = sm2(currentState, quality, now);
+        
+        // Check for leech
+        const suspended = isLeech(newState);
 
         // Update card
         set((state) => ({
@@ -288,18 +294,45 @@ export const useFlashcardStore = create<FlashcardStore>()(
             card.id === currentCard.id
               ? {
                   ...card,
-                  interval,
-                  ease,
-                  reps,
-                  due,
+                  ef: newState.ef,
+                  intervalDays: newState.intervalDays,
+                  reps: newState.reps,
+                  lapses: newState.lapses,
+                  due: newState.due,
+                  phase: newState.phase,
+                  stepIndex: newState.stepIndex,
+                  suspended,
                   updatedAt: now,
                 }
               : card
           ),
         }));
 
-        // Move to next card
-        get().nextCard();
+        // Handle "again" cards in learning phase - add to requeue for end of session
+        if (quality === 'again' && (newState.phase === 'learning' || newState.phase === 'relearning')) {
+          set((state) => ({
+            requeuedCards: [...state.requeuedCards, currentCard.id]
+          }));
+        }
+
+        // Check if this was the last card in the current queue
+        if (currentCardIndex >= cardsToReview.length - 1) {
+          // Check if there are requeued cards to show
+          const { requeuedCards } = get();
+          if (requeuedCards.length > 0) {
+            // Reset to show requeued cards
+            set({
+              currentCardIndex: 0,
+              isShowingAnswer: false,
+            });
+          } else {
+            // End the review session
+            get().stopReview();
+          }
+        } else {
+          // Move to next card
+          get().nextCard();
+        }
       },
 
       getNextCard: () => {
@@ -313,6 +346,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       getDueCards: (deckId) => {
         const now = Date.now();
         const allCards = get().cards;
+        const { requeuedCards, currentCardIndex } = get();
 
         let cardsToFilter = allCards;
         if (deckId) {
@@ -320,16 +354,35 @@ export const useFlashcardStore = create<FlashcardStore>()(
           cardsToFilter = deck ? deck.cards : [];
         }
 
-        return cardsToFilter.filter((card) => card.due <= now);
+        const dueCards = cardsToFilter.filter((card) => card.due <= now && !card.suspended);
+        
+        // If we've gone through all original due cards, show requeued cards
+        if (currentCardIndex >= dueCards.length && requeuedCards.length > 0) {
+          const requeuedCardObjects = requeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
+          // Clear requeued cards after adding them to avoid infinite loop
+          set({ requeuedCards: [] });
+          return requeuedCardObjects;
+        }
+        
+        return dueCards;
       },
 
       getAllCards: (deckId) => {
         const allCards = get().cards;
+        const { requeuedCards, currentCardIndex } = get();
 
         let cardsToFilter = allCards;
         if (deckId) {
           const deck = get().getDeck(deckId);
           cardsToFilter = deck ? deck.cards : [];
+        }
+
+        // If we've gone through all original cards, show requeued cards
+        if (currentCardIndex >= cardsToFilter.length && requeuedCards.length > 0) {
+          const requeuedCardObjects = requeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
+          // Clear requeued cards after adding them to avoid infinite loop
+          set({ requeuedCards: [] });
+          return requeuedCardObjects;
         }
 
         return cardsToFilter;
