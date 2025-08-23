@@ -1,10 +1,9 @@
 import { sm2, initializeCard } from './sm2';
-import type { Grade, ReviewState } from '../types';
+import type { ReviewState } from '../types';
 
 // Test utilities
 const NOW = Date.now();
 const mins = (ms: number) => Math.round(ms / 60_000);
-const hours = (ms: number) => Math.round(ms / (60 * 60_000));
 const days = (ms: number) => Math.round(ms / (24 * 60 * 60_000));
 
 // Helper function to create a learning card at a specific step
@@ -21,7 +20,7 @@ function createLearningCard(stepIndex: number): ReviewState {
 }
 
 // Helper function to create a graduating card
-function createGraduatingCard(intervalDays = 1): ReviewState {
+function createGraduatingCard(): ReviewState {
   const card = createLearningCard(2); // At 1d step
   return sm2(card, 'good', NOW); // Graduate to graduating phase
 }
@@ -124,24 +123,24 @@ describe('SM-2 Algorithm Tests', () => {
       expect(mins(s1.due - NOW)).toBe(1);
     });
 
-    test('Graduation review: Hard → extend graduation interval', () => {
-      const s0 = createGraduatingCard(1);
-      const s1 = sm2(s0, 'hard', NOW);
+          test('Graduation review: Hard → extend graduation interval', () => {
+        const s0 = createGraduatingCard();
+        const s1 = sm2(s0, 'hard', NOW);
 
       expect(s1.phase).toBe('graduating');
       expect(days(s1.due - NOW)).toBeGreaterThan(1); // extended interval
     });
 
-    test('Graduation review: Good → enter review phase', () => {
-      const s0 = createGraduatingCard(1);
-      const s1 = sm2(s0, 'good', NOW);
+          test('Graduation review: Good → enter review phase', () => {
+        const s0 = createGraduatingCard();
+        const s1 = sm2(s0, 'good', NOW);
 
       expect(s1.phase).toBe('review'); // Finally enters review phase
       expect(days(s1.due - NOW)).toBe(1);
     });
 
     test('Graduation review: Easy → enter review phase with bonus', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'easy', NOW);
 
       expect(s1.phase).toBe('review'); // Finally enters review phase
@@ -151,7 +150,7 @@ describe('SM-2 Algorithm Tests', () => {
 
   describe('Review phase — graduated cards', () => {
     test('Review: Again → relearning phase', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'good', NOW); // Pass graduation
       const s2 = sm2(s1, 'again', s1.due); // Fail review
 
@@ -161,7 +160,7 @@ describe('SM-2 Algorithm Tests', () => {
     });
 
     test('Review: Hard → reduce interval', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'good', NOW); // Pass graduation
       const s2 = sm2(s1, 'hard', s1.due); // Hard review
 
@@ -170,7 +169,7 @@ describe('SM-2 Algorithm Tests', () => {
     });
 
     test('Review: Good → normal interval progression', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'good', NOW); // Pass graduation
       const s2 = sm2(s1, 'good', s1.due); // Good review
 
@@ -179,7 +178,7 @@ describe('SM-2 Algorithm Tests', () => {
     });
 
     test('Review: Easy → bonus interval', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'good', NOW); // Pass graduation
       const s2 = sm2(s1, 'easy', s1.due); // Easy review
 
@@ -190,7 +189,7 @@ describe('SM-2 Algorithm Tests', () => {
 
   describe('Relearning phase — lapsed cards', () => {
     test('Relearning: Again → reset to first step', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'good', NOW); // Pass graduation
       const s2 = sm2(s1, 'again', s1.due); // Fail review → relearning
       const s3 = sm2(s2, 'again', s2.due); // Fail relearning
@@ -201,7 +200,7 @@ describe('SM-2 Algorithm Tests', () => {
     });
 
     test('Relearning: Good → return to review phase', () => {
-      const s0 = createGraduatingCard(1);
+      const s0 = createGraduatingCard();
       const s1 = sm2(s0, 'good', NOW); // Pass graduation
       const s2 = sm2(s1, 'again', s1.due); // Fail review → relearning
       const s3 = sm2(s2, 'good', s2.due); // Pass relearning
