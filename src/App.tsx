@@ -309,7 +309,7 @@ function App() {
               <>
                 <div className="flex justify-between items-center mb-8">
                   <h1>Review</h1>
-                  <div className="text-gray-custom">
+                  <div className="text-gray-custom text-sm">
                     {reviewAll ? 'All cards' : 'Due cards'} - {currentCardIndex + 1} of {cardsToReview.length}
                   </div>
                 </div>

@@ -52,7 +52,16 @@ export function formatTimeUntilDue(dueTime: number): string {
     result = `${minutes} min${minutes !== 1 ? 's' : ''}`;
   }
 
-  return isOverdue ? `Overdue by ${result}` : `In ${result}`;
+  if (isOverdue) {
+    // Show "Due now" for cards overdue by less than 1 day
+    if (days === 0) {
+      return "Due now";
+    }
+    // Show "Overdue" for cards overdue by 1 day or more
+    return `Overdue by ${result}`;
+  }
+  
+  return `In ${result}`;
 }
 
 /**

@@ -16,6 +16,7 @@ interface FlashcardStore {
   selectedDeckId?: string;
   reviewAll?: boolean;
   requeuedCards: string[]; // Card IDs that need to be reviewed again in current session
+  reviewedRequeuedCards: Set<string>; // Track which requeued cards have been reviewed
 
   // Actions
   // Card management
@@ -120,6 +121,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       selectedDeckId: undefined,
       reviewAll: false,
       requeuedCards: [],
+      reviewedRequeuedCards: new Set<string>(),
 
       // Card management
       addCard: (cardData) => {
@@ -247,6 +249,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           isShowingAnswer: false,
           reviewAll: reviewAll,
           requeuedCards: [],
+          reviewedRequeuedCards: new Set<string>(),
         });
       },
 
@@ -258,6 +261,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           isShowingAnswer: false,
           reviewAll: false,
           requeuedCards: [],
+          reviewedRequeuedCards: new Set<string>(),
         });
       },
 
@@ -317,27 +321,26 @@ export const useFlashcardStore = create<FlashcardStore>()(
           ),
         }));
 
-        // Handle "again" cards in learning phase - add to requeue for end of session
+        // Handle "again" cards - add them to the end of current session for immediate retry
         if (quality === 'again' && (newState.phase === 'learning' || newState.phase === 'relearning')) {
+          // Add the card to requeuedCards so it appears at the end of current session
           set((state) => ({
             requeuedCards: [...state.requeuedCards, currentCard.id]
           }));
         }
 
-        // Check if this was the last card in the current queue
-        if (currentCardIndex >= cardsToReview.length - 1) {
-          // Check if there are requeued cards to show
-          const { requeuedCards } = get();
-          if (requeuedCards.length > 0) {
-            // Reset to show requeued cards
-            set({
-              currentCardIndex: 0,
-              isShowingAnswer: false,
-            });
-          } else {
-            // End the review session
-            get().stopReview();
-          }
+        // Mark this card as reviewed if it was a requeued card
+        if (get().requeuedCards.includes(currentCard.id)) {
+          set((state) => ({
+            reviewedRequeuedCards: new Set([...state.reviewedRequeuedCards, currentCard.id])
+          }));
+        }
+
+        // Check if this was the last card in the current queue (including requeued cards)
+        const totalCardsInSession = cardsToReview.length + get().requeuedCards.length;
+        if (currentCardIndex >= totalCardsInSession - 1) {
+          // End the review session and clear requeued cards
+          get().stopReview();
         } else {
           // Move to next card
           get().nextCard();
@@ -355,7 +358,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       getDueCards: (deckId) => {
         const now = Date.now();
         const allCards = get().cards;
-        const { requeuedCards, currentCardIndex } = get();
+        const { requeuedCards, reviewedRequeuedCards } = get();
 
         let cardsToFilter = allCards;
         if (deckId) {
@@ -365,12 +368,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
         const dueCards = cardsToFilter.filter((card) => card.due <= now && !card.suspended);
         
-        // If we've gone through all original due cards, show requeued cards
-        if (currentCardIndex >= dueCards.length && requeuedCards.length > 0) {
-          const requeuedCardObjects = requeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
-          // Clear requeued cards after adding them to avoid infinite loop
-          set({ requeuedCards: [] });
-          return requeuedCardObjects;
+        // Merge requeued cards with due cards for the current session
+        if (requeuedCards.length > 0) {
+          // Filter out already-reviewed requeued cards
+          const unreviewedRequeuedCards = requeuedCards.filter(id => !reviewedRequeuedCards.has(id));
+          const requeuedCardObjects = unreviewedRequeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
+          // Return due cards first, then unreviewed requeued cards
+          return [...dueCards, ...requeuedCardObjects];
         }
         
         return dueCards;
@@ -378,7 +382,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
       getAllCards: (deckId) => {
         const allCards = get().cards;
-        const { requeuedCards, currentCardIndex } = get();
+        const { requeuedCards, reviewedRequeuedCards } = get();
 
         let cardsToFilter = allCards;
         if (deckId) {
@@ -386,12 +390,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
           cardsToFilter = deck ? allCards.filter(card => deck.cardIds.includes(card.id)) : [];
         }
 
-        // If we've gone through all original cards, show requeued cards
-        if (currentCardIndex >= cardsToFilter.length && requeuedCards.length > 0) {
-          const requeuedCardObjects = requeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
-          // Clear requeued cards after adding them to avoid infinite loop
-          set({ requeuedCards: [] });
-          return requeuedCardObjects;
+        // Merge requeued cards with all cards for the current session
+        if (requeuedCards.length > 0) {
+          // Filter out already-reviewed requeued cards
+          const unreviewedRequeuedCards = requeuedCards.filter(id => !reviewedRequeuedCards.has(id));
+          const requeuedCardObjects = unreviewedRequeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
+          // Return all cards first, then unreviewed requeued cards
+          return [...cardsToFilter, ...requeuedCardObjects];
         }
 
         return cardsToFilter;

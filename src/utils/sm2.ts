@@ -26,9 +26,9 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
     const next = learningStepsMs[stepIndex + 1];
 
     if (grade === 'again') {
-      // Reset to first step, due soon (minutes)
+      // Reset to first step, due immediately (so it can be reviewed again in current session)
       stepIndex = 0;
-      return { ...state, ef, reps, lapses, phase, stepIndex, due: now + learningStepsMs[0] };
+      return { ...state, ef, reps, lapses, phase, stepIndex, due: now };
     }
 
     if (grade === 'hard') {
@@ -87,7 +87,7 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
   // === PHASE: GRADUATION REVIEW === (NEW PHASE)
   if (phase === 'graduating') {
     if (grade === 'again') {
-      // Failed graduation → back to learning phase
+      // Failed graduation → back to learning phase (due immediately)
       lapses += 1;
       return { 
         ...state, 
@@ -96,7 +96,7 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
         lapses, 
         phase: 'learning', 
         stepIndex: 0, 
-        due: now + learningStepsMs[0],
+        due: now,
         intervalDays: 0
       };
     }
@@ -138,10 +138,9 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
   // === PHASE: REVIEW ===
   if (phase === 'review') {
     if (grade === 'again') {
-      // Lapse → relearning (short step)
+      // Lapse → relearning (due immediately so it can be reviewed again in current session)
       lapses += 1;
-      const firstRelearnMs = learningStepsMs[0] ?? 10 * 60_000;
-      return { ...state, ef, reps, lapses, phase: 'relearning', stepIndex: 0, due: now + firstRelearnMs };
+      return { ...state, ef, reps, lapses, phase: 'relearning', stepIndex: 0, due: now };
     }
 
     if (grade === 'hard') {
@@ -163,17 +162,25 @@ export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewS
 
   // === PHASE: RELEARNING === (like learning steps, then return to review)
   if (phase === 'relearning') {
-    // Treat similarly to learning: Again resets, Hard short repeat, Good advances, Easy graduates early
-    // For brevity, reuse the first one or two learning steps and on Good/Easy, return to review with a short interval.
-    const ms = grade === 'again' ? learningStepsMs[0]
-             : grade === 'hard'  ? Math.max(60_000, learningStepsMs[0] * 1.2)
-             : /* good/easy */     learningStepsMs[1] ?? 10 * 60_000;
-
+    if (grade === 'again') {
+      // Reset to first relearning step, due immediately
+      return { ...state, ef, reps, lapses, phase: 'relearning', stepIndex: 0, due: now };
+    }
+    
+    if (grade === 'hard') {
+      // Hard: short repeat interval
+      const hardMs = Math.max(60_000, learningStepsMs[0] * 1.2);
+      return { ...state, ef, reps, lapses, phase: 'relearning', stepIndex: 0, due: now + hardMs };
+    }
+    
+    // Good/Easy: graduate back to review
     if (grade === 'good' || grade === 'easy') {
       // Back to review with a small safety interval (e.g., 1 day)
       return { ...state, ef, reps, lapses, phase: 'review', intervalDays: 1, due: now + 86_400_000, stepIndex: undefined };
     }
-    return { ...state, ef, reps, lapses, phase: 'relearning', stepIndex: 0, due: now + ms };
+    
+    // Fallback
+    return { ...state, ef, reps, lapses, phase: 'relearning', stepIndex: 0, due: now + learningStepsMs[1] };
   }
 
   // Fallback: if phase missing, start in learning
