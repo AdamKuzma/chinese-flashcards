@@ -33,44 +33,48 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-2xl mx-auto px-16">
       {/* Card Display */}
-      <div className="bg-white rounded-lg shadow-lg p-8 min-h-96 flex flex-col justify-center items-center text-center mb-6">
+      <div className="bg-granite-custom rounded-lg shadow-lg p-8 min-h-96 flex flex-col justify-center items-center text-center mb-6">
         {/* Hanzi (Chinese characters) */}
-        <div className="text-6xl font-bold text-gray-800 mb-4">
+        <div className="text-6xl font-medium text-light-custom mb-4">
           {card.hanzi}
         </div>
 
         {/* Pinyin */}
-        <div className="text-2xl text-blue-600 mb-4 font-medium">
-          {card.pinyin}
-        </div>
-
-        {/* English translation - shown only when answer is revealed */}
-        {isShowingAnswer && (
-          <div className="text-xl text-gray-700 border-t pt-4 mt-4">
-            {card.english}
+        {card.pinyin && (
+          <div className="text-lg text-light-custom mb-4">
+            {card.pinyin}
           </div>
         )}
 
-        {/* Show Answer Button */}
-        {!isShowingAnswer && (
-          <button
-            onClick={onShowAnswer}
-            className="mt-6 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Show Answer
-          </button>
+        {/* English translation - shown only when answer is revealed */}
+        {isShowingAnswer && (
+          <div className="text-2xl text-light-custom font-medium pt-4 mt-4">
+            {card.english}
+          </div>
         )}
       </div>
 
+      {/* Show Answer Button */}
+      {!isShowingAnswer && (
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={onShowAnswer}
+            className="btn-show-answer px-4 py-1.5 bg-granite-custom text-light-custom rounded-lg font-medium"
+          >
+            Show Answer
+          </button>
+        </div>
+      )}
+
       {/* Card Info */}
-      <div className="text-sm text-gray-600 mb-4 text-center">
+      {/* <div className="text-sm text-gray-600 mb-4 text-center">
         <div>Due: {formatDueDate(card.due)}</div>
         <div>Interval: {card.interval} day{card.interval !== 1 ? 's' : ''}</div>
         <div>Ease: {card.ease.toFixed(2)}</div>
         <div>Repetitions: {card.reps}</div>
-      </div>
+      </div> */}
 
       {/* Review Buttons */}
       {isShowingAnswer && (
@@ -78,25 +82,25 @@ export const Flashcard: React.FC<FlashcardProps> = ({
           <div className="flex justify-center space-x-3">
             <button
               onClick={() => onReview(ReviewQuality.AGAIN)}
-              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
             >
               Again
             </button>
             <button
               onClick={() => onReview(ReviewQuality.HARD)}
-              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
             >
               Hard
             </button>
             <button
               onClick={() => onReview(ReviewQuality.GOOD)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
             >
               Good
             </button>
             <button
               onClick={() => onReview(ReviewQuality.EASY)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
             >
               Easy
             </button>
@@ -105,7 +109,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       )}
 
       {/* Navigation Buttons */}
-      {showNavigation && (
+      {/* {showNavigation && (
         <div className="flex justify-between mt-6">
           <button
             onClick={onPrevious}
@@ -120,7 +124,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             Next
           </button>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

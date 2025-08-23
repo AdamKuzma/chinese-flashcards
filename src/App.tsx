@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Flashcard } from './components';
+import { Flashcard, Toast } from './components';
 import { dbOperations } from './database.ts';
 import { ReviewQuality } from './types.ts';
 import './App.css';
@@ -22,15 +22,21 @@ function App() {
     nextCard,
     previousCard,
     addCard,
+    deleteCard,
+    updateCard,
     getTodaysReviewCount,
   } = useFlashcardStore();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'add-card'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card'>('dashboard');
   const [newCardForm, setNewCardForm] = useState({
     hanzi: '',
     pinyin: '',
     english: '',
   });
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [editingCard, setEditingCard] = useState<{id: string, field: 'hanzi' | 'english'} | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   // Initialize sample data on first load
   useEffect(() => {
@@ -55,17 +61,21 @@ function App() {
 
   const handleAddCard = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCardForm.hanzi || !newCardForm.pinyin || !newCardForm.english) return;
+    if (!newCardForm.hanzi || !newCardForm.english) return;
 
     addCard({
-      ...newCardForm,
+      hanzi: newCardForm.hanzi,
+      pinyin: newCardForm.pinyin || '', // Optional field, default to empty string
+      english: newCardForm.english,
       due: Date.now() - 1000, // 1 second ago to ensure it's immediately due for review
       interval: 1,
       ease: 2.5,
       reps: 0,
     });
     setNewCardForm({ hanzi: '', pinyin: '', english: '' });
-    setActiveTab('dashboard');
+    
+    // Show toast notification
+    showToastMessage('Card added');
   };
 
   const handleStartReview = (reviewAllCards = false) => {
@@ -81,6 +91,48 @@ function App() {
     setActiveTab('dashboard');
   };
 
+  const showToastMessage = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+  };
+
+  const hideToast = () => {
+    setShowToast(false);
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    deleteCard(cardId);
+    showToastMessage('Card removed');
+  };
+
+  const handleStartEdit = (cardId: string, field: 'hanzi' | 'english', currentValue: string) => {
+    setEditingCard({ id: cardId, field });
+    setEditValue(currentValue);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingCard && editValue.trim()) {
+      updateCard(editingCard.id, { [editingCard.field]: editValue.trim() });
+    }
+    setEditingCard(null);
+    setEditValue('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCard(null);
+    setEditValue('');
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveEdit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancelEdit();
+    }
+  };
+
   const handleReview = (quality: ReviewQuality) => {
     if (currentCard) {
       reviewCard(quality);
@@ -93,34 +145,44 @@ function App() {
       {/* Tabs */}
 
       <header className="">
-        <div className="w-[620px] mx-auto px-4 py-4">
-          <nav className="mt-4 flex space-x-4">
+        <div className="w-[700px] mx-auto px-4 py-4">
+                     <nav className="mt-4 flex justify-center border-b border-granite-custom">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-2 rounded-lg ${
+              className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'dashboard'
-                  ? '!bg-[#212121] text-white'
-                  : '!bg-[#212121] text-white hover:!bg-[#2a2a2a]'
+                  ? 'text-light-custom border-light-custom'
+                  : 'text-gray-custom border-transparent'
               }`}
             >
-              Dashboard
+              Profile
             </button>
             <button
               onClick={() => setActiveTab('review')}
-              className={`px-4 py-2 rounded-lg ${
+              className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'review'
-                  ? '!bg-[#212121] text-white'
-                  : '!bg-[#212121] text-white hover:!bg-[#2a2a2a]'
+                  ? 'text-light-custom border-light-custom'
+                  : 'text-gray-custom border-transparent'
               }`}
             >
               Review 
             </button>
             <button
+              onClick={() => setActiveTab('browse')}
+              className={`px-12 py-2 rounded-t-lg border-b-1 ${
+                activeTab === 'browse'
+                  ? 'text-light-custom border-light-custom'
+                  : 'text-gray-custom border-transparent'
+              }`}
+            >
+              Browse
+            </button>
+            <button
               onClick={() => setActiveTab('add-card')}
-              className={`px-4 py-2 rounded-lg ${
+              className={`px-12 py-2 rounded-t-lg border-b-1 ${
                 activeTab === 'add-card'
-                  ? '!bg-[#212121] text-white'
-                  : '!bg-[#212121] text-white hover:!bg-[#2a2a2a]'
+                  ? 'text-light-custom border-light-custom'
+                  : 'text-gray-custom border-transparent'
               }`}
             >
               Add
@@ -131,45 +193,55 @@ function App() {
 
       {/* Main Content */}
 
-      <main className="w-[620px] bg-[#212121] mx-auto px-4 py-8">
+      <main className="w-[700px] mx-auto px-4 py-8">
         <div className="w-full">
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-[#181818] p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-white">Total Cards</h3>
-                <p className="text-3xl font-bold text-blue-600">{cards.length}</p>
-              </div>
-              <div className="bg-[#181818] p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-white">Due Today</h3>
-                <p className="text-3xl font-bold text-orange-600">{dueCards.length}</p>
-              </div>
-              <div className="bg-[#181818] p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-semibold text-white">Reviews Today</h3>
-                <p className="text-3xl font-bold text-green-600">{todaysReviews}</p>
+            <div className="flex justify-between items-center">
+              <h1 className="text-left">Profile</h1>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <span className="text-md text-silver-custom">Total Cards</span>
+                  <span className="text-md text-light-custom font-medium">{cards.length}</span>
+                </div>
+                <div className="w-px h-4 border-granite-custom border-l"></div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-md text-silver-custom">Due Today</span>
+                  <span className="text-md text-light-custom font-medium">{dueCards.length}</span>
+                </div>
+                <div className="w-px h-4 border-granite-custom border-l"></div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-md text-silver-custom">Reviews Today</span>
+                  <span className="text-md text-light-custom font-medium">{todaysReviews}</span>
+                </div>
               </div>
             </div>
+          )}
+          {activeTab === 'dashboard' && (
+              <div className="space-y-6">
 
 
 
-            <div className="bg-[#181818] p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Cards</h3>
+            <div className="mt-24">
+              <h3 className="text-md text-silver-custom text-left mb-4">Recent cards</h3>
               {cards.length === 0 ? (
                 <p className="text-gray-500">No cards yet. Add your first card to get started!</p>
               ) : (
-                <div className="space-y-2">
-                  {cards.slice(0, 5).map((card) => (
-                    <div key={card.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                      <div>
-                        <span className="font-bold text-lg">{card.hanzi}</span>
-                        <span className="text-blue-600 ml-2">{card.pinyin}</span>
-                        <span className="text-gray-600 ml-2">• {card.english}</span>
+                  <div className="space-y-0">
+                    {cards.slice(0, 5).map((card, index) => (
+                      <div key={card.id} className={`flex justify-between items-center py-4 ${index < cards.slice(0, 5).length - 1 ? 'border-b border-granite-custom' : ''}`}>
+                        <div className="flex items-center flex-1">
+                          <div className="w-20 text-left">
+                            <span className="font-medium text-light-custom">{card.hanzi}</span>
+                          </div>
+                          <div className="flex-1 text-left">
+                            <span className="text-gray-custom">{card.english}</span>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-custom w-20 text-right">
+                          {card.reps} reviews
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {card.reps} reviews
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               )}
             </div>
@@ -177,21 +249,15 @@ function App() {
         )}
 
           {activeTab === 'review' && (
-            <div className="space-y-6">
+            <>
+              <div className="space-y-6">
             {isReviewing && cardsToReview.length > 0 && currentCard ? (
               <>
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">Review Session</h2>
-                  <button
-                    onClick={handleStopReview}
-                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                  >
-                    End Review
-                  </button>
-                </div>
-
-                <div className="text-center text-gray-600 mb-4">
-                  Card {currentCardIndex + 1} of {cardsToReview.length} {reviewAll ? '(all cards)' : '(due cards)'}
+                <div className="flex justify-between items-center mb-8">
+                  <h1>Review</h1>
+                  <div className="text-gray-custom">
+                    {reviewAll ? 'All cards' : 'Due cards'} - {currentCardIndex + 1} of {cardsToReview.length}
+                  </div>
                 </div>
 
                 <Flashcard
@@ -223,107 +289,172 @@ function App() {
               <div className="text-center py-12">
                 {dueCards.length > 0 ? (
                   <>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Ready to Review!</h3>
-                    <p className="text-gray-600 mb-4">You have {dueCards.length} card{dueCards.length !== 1 ? 's' : ''} due for review.</p>
+                    <h3 className="text-xl text-light-custom mb-2">Ready to Review!</h3>
+                    <p className="text-sm text-silver-custom mb-12">You have {dueCards.length} card{dueCards.length !== 1 ? 's' : ''} due for review.</p>
                     <button
                       onClick={() => handleStartReview(false)}
-                      className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                      className="btn-add px-4 py-1 bg-granite-custom text-light-custom font-medium rounded-lg"
                     >
-                      Start Review ({dueCards.length} cards)
+                      Start Review
                     </button>
                   </>
                 ) : (
                   <>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No cards due</h3>
-                    <p className="text-gray-600 mb-4">All caught up! Check back later for more reviews.</p>
+                    <h3 className="text-xl text-light-custom mb-2">No cards due</h3>
+                    <p className="text-sm text-silver-custom mb-12">All caught up! Check back later for more reviews.</p>
                     <div className="flex justify-center gap-4">
                       {allCards.length > 0 && (
                         <button
                           onClick={() => handleStartReview(true)}
-                          className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                          className="btn-add px-4 py-1 bg-granite-custom text-light-custom font-medium rounded-lg"
                         >
-                          Review All Cards ({allCards.length})
+                          Review All Cards
                         </button>
                       )}
-                      <button
-                        onClick={() => setActiveTab('dashboard')}
-                        className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                      >
-                        Back to Dashboard
-                      </button>
                     </div>
                   </>
                 )}
               </div>
             )}
-          </div>
-        )}
+              </div>
+            </>
+          )}
+
+          {activeTab === 'browse' && (
+            <>
+              <div className="flex justify-between items-center mb-8">
+                <h1 className="text-left">Browse</h1>
+                <div className="text-gray-custom">
+                  {allCards.length} total cards
+                </div>
+              </div>
+              <div className="space-y-0">
+                {allCards.length === 0 ? (
+                  <p className="text-gray-500">No cards yet. Add your first card to get started!</p>
+                ) : (
+                  allCards.map((card, index) => (
+                    <div key={card.id} className={`flex justify-between items-center py-4 ${index < allCards.length - 1 ? 'border-b border-granite-custom' : ''}`}>
+                      <div className="flex items-center flex-1">
+                        <div className="w-20 text-left">
+                          {editingCard?.id === card.id && editingCard?.field === 'hanzi' ? (
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleEditKeyDown}
+                              className="input-edit w-full px-2 py-1 bg-granite-custom rounded"
+                              autoFocus
+                            />
+                          ) : (
+                            <span 
+                              className="font-medium text-light-custom cursor-pointer hover:bg-granite-custom px-2 py-1 rounded"
+                              onDoubleClick={() => handleStartEdit(card.id, 'hanzi', card.hanzi)}
+                            >
+                              {card.hanzi}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 text-left">
+                          {editingCard?.id === card.id && editingCard?.field === 'english' ? (
+                            <input
+                              type="text"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={handleSaveEdit}
+                              onKeyDown={handleEditKeyDown}
+                              className="input-edit w-full px-2 py-1 bg-granite-custom rounded"
+                              autoFocus
+                            />
+                          ) : (
+                            <span 
+                              className="text-gray-custom cursor-pointer hover:bg-granite-custom px-2 py-1 rounded"
+                              onDoubleClick={() => handleStartEdit(card.id, 'english', card.english)}
+                            >
+                              {card.english}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteCard(card.id)}
+                        className="w-8 h-8 flex items-center justify-center text-gray-custom hover:text-light-custom hover:bg-granite-custom rounded"
+                        title="Delete card"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
 
           {activeTab === 'add-card' && (
-            <div className="max-w-md mx-auto">
-            <div className="bg-white p-6 rounded-lg shadow-sm">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Add New Card</h2>
+            <>
+              <div className="flex justify-between items-center mb-10">
+                <h1 className="text-left">Add Card</h1>
+              </div>
+            <div className="">
               <form onSubmit={handleAddCard} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Chinese Characters (Hanzi)
-                  </label>
-                  <input
-                    type="text"
-                    value={newCardForm.hanzi}
-                    onChange={(e) => setNewCardForm({ ...newCardForm, hanzi: e.target.value })}
-                    className="text-gray-800 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="你好"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-silver-custom mb-1 text-left">
+                      Front
+                    </label>
+                      <input
+                        type="text"
+                        value={newCardForm.hanzi}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, hanzi: e.target.value })}
+                        className="input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none"
+                        placeholder="你好"
+                        required
+                      />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-silver-custom mb-1 text-left">
+                      Back
+                    </label>
+                      <input
+                        type="text"
+                        value={newCardForm.english}
+                        onChange={(e) => setNewCardForm({ ...newCardForm, english: e.target.value })}
+                        className="input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none"
+                        placeholder="hello"
+                        required
+                      />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Pinyin
-                  </label>
-                  <input
-                    type="text"
-                    value={newCardForm.pinyin}
-                    onChange={(e) => setNewCardForm({ ...newCardForm, pinyin: e.target.value })}
-                    className="text-gray-800 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="nǐ hǎo"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    English Translation
-                  </label>
-                  <input
-                    type="text"
-                    value={newCardForm.english}
-                    onChange={(e) => setNewCardForm({ ...newCardForm, english: e.target.value })}
-                    className="text-gray-800 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="hello"
-                    required
-                  />
-                </div>
-                <div className="flex space-x-3">
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                  >
-                    Add Card
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('dashboard')}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
+                <div className="border-t border-granite-custom mt-12 pt-6">
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('dashboard')}
+                      className="btn-cancel px-4 py-1.5 text-light-custom rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-add px-4 py-1.5 bg-granite-custom text-light-custom rounded-lg font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
-            </div>
+            </>
           )}
         </div>
       </main>
+      
+      {/* Toast Notification */}
+      <Toast 
+        message={toastMessage}
+        show={showToast}
+        onHide={hideToast}
+      />
     </div>
   );
 }

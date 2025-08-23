@@ -7,12 +7,19 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #181818;
+  background-color: var(--color-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Custom color variables */
+  --color-light: #EEEEEE;
+  --color-silver: #BBBBBB;
+  --color-gray: #888888;
+  --color-granite: #393939;
+  --color-dark: #222222;
 }
 
 a {
@@ -37,8 +44,111 @@ html {
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 1.5em;
   line-height: 1.1;
+  font-weight: 400;
+  color: var(--color-light);
+}
+
+button {
+  cursor: pointer;
+}
+
+/* Custom utility classes for our colors */
+.border-granite-custom {
+  border-color: var(--color-granite) !important;
+}
+
+.border-light-custom {
+  border-color: var(--color-light) !important;
+}
+
+.text-gray-custom {
+  color: var(--color-gray) !important;
+}
+
+.text-light-custom {
+  color: var(--color-light) !important;
+}
+
+.text-silver-custom {
+  color: var(--color-silver) !important;
+}
+
+.border-gray-custom {
+  border-color: var(--color-gray) !important;
+}
+
+.bg-granite-custom {
+  background-color: var(--color-granite) !important;
+}
+
+.input-custom {
+  color: var(--color-light) !important;
+}
+
+.input-custom::placeholder {
+  color: var(--color-gray) !important;
+}
+
+.input-edit {
+  color: var(--color-light) !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.input-edit::placeholder {
+  color: var(--color-gray) !important;
+}
+
+.input-edit:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.focus-ring-gray-custom:focus {
+  box-shadow: 0 0 0 1px var(--color-gray) !important;
+}
+
+.btn-cancel:hover {
+  color: var(--color-silver) !important;
+}
+
+.btn-add:hover {
+  background-color: var(--color-granite) !important;
+  opacity: 0.9;
+}
+
+.btn-show-answer:hover {
+  background-color: var(--color-granite) !important;
+  opacity: 0.9;
+}
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  background-color: var(--color-granite);
+  color: var(--color-light);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 1000;
+  transition: all 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.toast-show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast-hide {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
 }
 
 @media (prefers-color-scheme: light) {
