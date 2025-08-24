@@ -351,7 +351,7 @@ function App() {
               <div className="text-center py-12">
                 {dueCards.length > 0 ? (
                   <>
-                    <img src="/src/assets/coffee.png" alt="Coffee" className="w-24 h-24 mx-auto mb-4" />
+                    <img src="/assets/coffee.png" alt="Coffee" className="w-24 h-24 mx-auto mb-4" />
                     <h3 className="text-xl text-light-custom mb-2">Ready to review!</h3>
                     <p className="text-sm text-silver-custom mb-12">You have {dueCards.length} card{dueCards.length !== 1 ? 's' : ''} due for review.</p>
                     <Button
@@ -363,7 +363,7 @@ function App() {
                   </>
                 ) : (
                   <>
-                    <img src="/src/assets/cat.png" alt="Cat" className="w-24 h-24 mx-auto mb-4" />
+                    <img src="/assets/cat.png" alt="Cat" className="w-24 h-24 mx-auto mb-4" />
                     <h3 className="text-xl text-light-custom mb-2">No cards due</h3>
                     <p className="text-sm text-silver-custom mb-12">All caught up! Check back later for more reviews.</p>
                     <div className="flex justify-center gap-4">
