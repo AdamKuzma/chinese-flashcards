@@ -49,6 +49,10 @@ interface FlashcardStore {
   setSelectedDeckId: (deckId: string | undefined) => void;
   nextCard: () => void;
   previousCard: () => void;
+  
+  // Import/Export
+  exportData: () => void;
+  importData: (data: { cards: Card[]; decks: Deck[] }) => void;
 }
 
 // SM-2 Algorithm is now handled in utils/sm2.ts
@@ -436,6 +440,43 @@ export const useFlashcardStore = create<FlashcardStore>()(
           currentCardIndex: Math.max(state.currentCardIndex - 1, 0),
           isShowingAnswer: false,
         }));
+      },
+
+      // Import/Export
+      exportData: () => {
+        const { cards, decks } = get();
+        const data = { cards, decks };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chinese-flashcards-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      },
+
+      importData: (data) => {
+        const { cards: newCards, decks: newDecks } = data;
+        
+        // Validate the data
+        if (!Array.isArray(newCards) || !Array.isArray(newDecks)) {
+          throw new Error('Invalid data format');
+        }
+
+        // Update the store with new data
+        set({
+          cards: newCards,
+          decks: newDecks,
+          currentCardIndex: 0,
+          isShowingAnswer: false,
+          isReviewing: false,
+          selectedDeckId: undefined,
+          reviewAll: false,
+          requeuedCards: [],
+          reviewedRequeuedCards: new Set<string>(),
+        });
       },
     }),
     {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Flashcard, Toast, HelpModal, Button } from './components';
+import { Flashcard, Toast, HelpModal, Button, EllipsisMenu, ImportModal } from './components';
 import { dbOperations } from './database.ts';
 import { ReviewQuality } from './types.ts';
 import { formatTimeUntilDue } from './utils';
@@ -25,6 +25,8 @@ function App() {
     deleteCard,
     updateCard,
     getTodaysReviewCount,
+    exportData,
+    importData,
   } = useFlashcardStore();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card'>(() => {
@@ -45,6 +47,7 @@ function App() {
   const [editingCard, setEditingCard] = useState<{id: string, field: 'hanzi' | 'english'} | null>(null);
   const [editValue, setEditValue] = useState('');
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Initialize sample data on first load
   useEffect(() => {
@@ -193,6 +196,24 @@ function App() {
   const handleReview = (quality: ReviewQuality) => {
     if (currentCard) {
       reviewCard(quality);
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      exportData();
+      showToastMessage('Data exported successfully');
+    } catch (error) {
+      showToastMessage('Export failed');
+    }
+  };
+
+  const handleImport = (data: any) => {
+    try {
+      importData(data);
+      showToastMessage('Data imported successfully');
+    } catch (error) {
+      showToastMessage('Import failed');
     }
   };
 
@@ -559,6 +580,19 @@ function App() {
       >
         <span className="text-md font-medium">?</span>
       </button>
+
+      {/* Ellipsis Menu */}
+      <EllipsisMenu 
+        onExport={handleExport}
+        onImport={() => setShowImportModal(true)}
+      />
+
+      {/* Import Modal */}
+      <ImportModal 
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={handleImport}
+      />
 
       {/* Help Modal */}
       <HelpModal 
