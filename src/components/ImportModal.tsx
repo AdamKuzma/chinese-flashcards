@@ -80,7 +80,7 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           <h2 className="text-xl font-semibold text-light-custom">Import Flashcard Data</h2>
           <Button
             onClick={onClose}
-            variant="ghost"
+            variant="cancel"
             size="sm"
             className="text-gray-400 hover:text-light-custom"
           >
