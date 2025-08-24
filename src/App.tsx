@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Flashcard, Toast, HelpModal } from './components';
+import { Flashcard, Toast, HelpModal, Button } from './components';
 import { dbOperations } from './database.ts';
 import { ReviewQuality } from './types.ts';
 import { formatTimeUntilDue } from './utils';
@@ -330,27 +330,29 @@ function App() {
               <div className="text-center py-12">
                 {dueCards.length > 0 ? (
                   <>
-                    <h3 className="text-xl text-light-custom mb-2">Ready to Review!</h3>
+                    <img src="/src/assets/coffee.png" alt="Coffee" className="w-24 h-24 mx-auto mb-4" />
+                    <h3 className="text-xl text-light-custom mb-2">Ready to review!</h3>
                     <p className="text-sm text-silver-custom mb-12">You have {dueCards.length} card{dueCards.length !== 1 ? 's' : ''} due for review.</p>
-                    <button
+                    <Button
                       onClick={() => handleStartReview(false)}
-                      className="btn-add px-4 py-1 bg-granite-custom text-light-custom font-medium rounded-lg"
+                      size="sm"
                     >
                       Start Review
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
+                    <img src="/src/assets/cat.png" alt="Cat" className="w-24 h-24 mx-auto mb-4" />
                     <h3 className="text-xl text-light-custom mb-2">No cards due</h3>
                     <p className="text-sm text-silver-custom mb-12">All caught up! Check back later for more reviews.</p>
                     <div className="flex justify-center gap-4">
                       {allCards.length > 0 && (
-                        <button
+                        <Button
                           onClick={() => handleStartReview(true)}
-                          className="btn-add px-4 py-1 bg-granite-custom text-light-custom font-medium rounded-lg"
+                          size="sm"
                         >
-                          Review All Cards
-                        </button>
+                          Review Cards
+                        </Button>
                       )}
                     </div>
                   </>
@@ -441,13 +443,15 @@ function App() {
                           {formatTimeUntilDue(card.due)}
                         </span>
                       </div>
-                      <button
+                      <Button
                         onClick={() => handleDeleteCard(card.id)}
+                        variant="cancel"
+                        size="sm"
                         className="w-8 h-8 flex items-center justify-center text-gray-custom hover:text-light-custom hover:bg-granite-custom rounded"
                         title="Delete card"
                       >
                         ×
-                      </button>
+                      </Button>
                     </div>
                   ))
                 )}
@@ -516,19 +520,20 @@ function App() {
                 </div>
                 <div className="border-t border-granite-custom mt-12 pt-6">
                   <div className="flex justify-end space-x-3">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => handleTabChange('dashboard')}
-                      className="btn-cancel px-4 py-1.5 text-light-custom rounded-lg"
+                      variant="cancel"
+                      size="md"
                     >
                       Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="submit"
-                      className="btn-add px-4 py-1.5 bg-granite-custom text-light-custom rounded-lg font-medium"
+                      size="md"
                     >
                       Add
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </form>

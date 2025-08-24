@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Card } from '../types.ts';
 import { ReviewQuality } from '../types.ts';
 import { getCardDebugInfo } from '../utils';
+import Button from './Button';
 
 interface FlashcardProps {
   card: Card;
@@ -104,7 +105,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         <button
           onClick={playAudio}
           disabled={isPlaying}
-          className="absolute bottom-4 right-4 w-10 h-10 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed text-light-custom rounded-full flex items-center justify-center transition-colors shadow-lg"
+          className="absolute bottom-4 right-4 w-10 h-10 hover:bg-gray-custom disabled:opacity-50 disabled:cursor-not-allowed text-light-custom rounded-full flex items-center justify-center transition-colors"
           title={isPlaying ? "Playing..." : "Listen to pronunciation"}
         >
           {isPlaying ? (
@@ -137,12 +138,12 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       {/* Show Answer Button */}
       {!isShowingAnswer && (
         <div className="flex justify-center mb-6">
-          <button
+          <Button
             onClick={onShowAnswer}
-            className="btn-show-answer px-4 py-1.5 bg-granite-custom text-light-custom rounded-lg font-medium"
+            size="md"
           >
             Show Answer
-          </button>
+          </Button>
         </div>
       )}
 
@@ -160,42 +161,44 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       {isShowingAnswer && (
         <div className="space-y-3">
           <div className="flex justify-center space-x-3">
-            <button
+            <Button
               onClick={() => onReview(ReviewQuality.AGAIN)}
-              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
+              size="lg"
             >
               Again
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => onReview(ReviewQuality.HARD)}
-              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
+              size="lg"
             >
               Hard
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => onReview(ReviewQuality.GOOD)}
-              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
+              size="lg"
             >
               Good
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => onReview(ReviewQuality.EASY)}
-              className="btn-add px-4 py-2 bg-granite-custom text-light-custom rounded-lg"
+              size="lg"
             >
               Easy
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* Debug Info Toggle */}
       <div className="flex justify-center mt-6 mb-4">
-        <button
+        <Button
           onClick={() => setShowDebugInfo(!showDebugInfo)}
-          className="text-xs text-silver-custom hover:text-light-custom"
+          variant="cancel"
+          size="sm"
+          className="text-xs"
         >
           {showDebugInfo ? '▲ Hide' : '▼ Show'} Algorithm Details
-        </button>
+        </Button>
       </div>
 
       {/* Debug Information */}

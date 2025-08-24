@@ -83,6 +83,11 @@ button {
   background-color: var(--color-granite) !important;
 }
 
+.bg-dark-custom {
+  background-color: var(--color-dark) !important;
+}
+
+
 .input-custom {
   color: var(--color-light) !important;
 }

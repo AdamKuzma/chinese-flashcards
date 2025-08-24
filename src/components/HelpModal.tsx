@@ -1,5 +1,6 @@
 import React from 'react';
 import { helpContent } from '../help-content';
+import Button from './Button';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -32,13 +33,15 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex justify-between items-center p-6">
           <h2 className="text-xl font-medium text-light-custom">{helpContent.title}</h2>
-          <button
+          <Button
             onClick={onClose}
+            variant="cancel"
+            size="sm"
             className="w-8 h-8 flex items-center justify-center text-gray-custom hover:text-light-custom hover:bg-gray-600 rounded transition-colors"
-            aria-label="Close help"
+            title="Close help"
           >
             ×
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
