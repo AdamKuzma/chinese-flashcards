@@ -15,6 +15,15 @@ export interface Card {
   phase: Phase;         // learning phase
   stepIndex?: number;   // index into learningSteps
   
+  // FSRS fields (persisted alongside SM-2 for migration/compat)
+  stability?: number;
+  difficulty?: number;
+  fsrsState?: 'New' | 'Learning' | 'Review' | 'Relearning';
+  fsrsLastReview?: number;
+  fsrsLearningSteps?: number;
+  fsrsScheduledDays?: number;
+  fsrsElapsedDays?: number;
+  
   createdAt: number;    // When the card was created
   updatedAt: number;    // When the card was last updated
   suspended?: boolean;  // For leech management

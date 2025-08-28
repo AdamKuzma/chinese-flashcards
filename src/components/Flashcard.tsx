@@ -204,7 +204,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       {/* Debug Information */}
       {showDebugInfo && (
         <div className="bg-granite-custom rounded-lg p-4 mb-6 text-left">
-          <h4 className="text-sm font-medium text-light-custom mb-3">SM-2 Algorithm Details</h4>
+          <h4 className="text-sm font-medium text-light-custom mb-3">Scheduling Details (FSRS)</h4>
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
               <span className="text-silver-custom">Next Review:</span>
@@ -213,10 +213,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             <div>
               <span className="text-silver-custom">Phase:</span>
               <div className="text-light-custom font-medium capitalize">{debugInfo.phase}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">Ease Factor:</span>
-              <div className="text-light-custom font-medium">{debugInfo.easeFactor}</div>
             </div>
             <div>
               <span className="text-silver-custom">Interval:</span>
@@ -234,6 +230,18 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             <div>
               <span className="text-silver-custom">Total Lapses:</span>
               <div className="text-light-custom font-medium">{debugInfo.lapses}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">FSRS Stability:</span>
+              <div className="text-light-custom font-medium">{debugInfo.stability ?? '—'}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">FSRS Difficulty:</span>
+              <div className="text-light-custom font-medium">{debugInfo.difficulty ?? '—'}</div>
+            </div>
+            <div>
+              <span className="text-silver-custom">FSRS State:</span>
+              <div className="text-light-custom font-medium">{debugInfo.fsrsState ?? '—'}</div>
             </div>
             <div>
               <span className="text-silver-custom">Audio Cached:</span>

@@ -9,7 +9,7 @@ import './App.css';
 function App() {
   const {
     cards,
-    currentCardIndex,
+    // removed currentCardIndex for queue model
     isShowingAnswer,
     isReviewing,
     selectedDeckId,
@@ -27,6 +27,9 @@ function App() {
     getTodaysReviewCount,
     exportData,
     importData,
+    // new helpers
+    getCurrentCard,
+    getSessionPosition,
   } = useFlashcardStore();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card'>(() => {
@@ -67,7 +70,8 @@ function App() {
   const dueCards = selectedDeckId ? getDueCards(selectedDeckId) : getDueCards();
   const allCards = selectedDeckId ? getAllCards(selectedDeckId) : getAllCards();
   const cardsToReview = reviewAll ? allCards : dueCards;
-  const currentCard = cardsToReview[currentCardIndex];
+  const currentCard = getCurrentCard();
+  const { index: sessionIndex, total: sessionTotal } = getSessionPosition();
   const todaysReviews = getTodaysReviewCount();
 
   // Validation functions
@@ -143,8 +147,6 @@ function App() {
       handleTabChange('review');
     }
   };
-
-
 
   const showToastMessage = (message: string) => {
     setToastMessage(message);
@@ -331,7 +333,7 @@ function App() {
                 <div className="flex justify-between items-center mb-8">
                   <h1>Review</h1>
                   <div className="text-gray-custom text-sm">
-                    {reviewAll ? 'All cards' : 'Due cards'} - {currentCardIndex + 1} of {cardsToReview.length}
+                    {reviewAll ? 'All cards' : 'Due cards'} - {sessionIndex + 1} of {sessionTotal}
                   </div>
                 </div>
 
@@ -342,7 +344,7 @@ function App() {
                   onReview={handleReview}
                   onNext={nextCard}
                   onPrevious={previousCard}
-                  showNavigation={cardsToReview.length > 1}
+                  showNavigation={sessionTotal > 1}
                 />
 
 
@@ -395,7 +397,7 @@ function App() {
               
               {/* Column Headers */}
               {allCards.length > 0 && (
-                <div className="flex justify-between items-center py-3 border-b-1 border-granite-custom">
+                <div className="flex justify_between items-center py-3 border-b-1 border-granite-custom">
                   <div className="flex items-center flex-1">
                     <div className="w-20 text-left">
                       <span className="text-xs text-silver-custom font-medium">FRONT</span>
@@ -446,7 +448,7 @@ function App() {
                               onChange={(e) => setEditValue(e.target.value)}
                               onBlur={handleSaveEdit}
                               onKeyDown={handleEditKeyDown}
-                              className="input-edit w-full px-2 py-1 bg-granite-custom rounded"
+                              className="input-edit w_full px-2 py-1 bg-granite-custom rounded"
                               autoFocus
                             />
                           ) : (
@@ -528,7 +530,7 @@ function App() {
                           }
                         }}
                         onBlur={(e) => handleInputBlur('english', e.target.value)}
-                        className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none ${
+                        className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline_none ${
                           validationErrors.english ? 'ring-1 ring-red-500' : ''
                         }`}
                         placeholder="hello"
@@ -574,7 +576,7 @@ function App() {
       {/* Help Button - Fixed position at bottom right */}
       <button
         onClick={() => setShowHelpModal(true)}
-        className="fixed bottom-6 right-6 w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items-center justify-center transition-colors z-40"
+        className="fixed bottom-6 right-6 w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items_center justify-center transition-colors z-40"
         aria-label="Help"
         title="Help & Documentation"
       >

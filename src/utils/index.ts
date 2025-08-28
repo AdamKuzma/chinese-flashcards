@@ -1,4 +1,5 @@
 export * from './sm2';
+export * from './fsrsAdapter';
 
 /**
  * Format time remaining until a card is due for review
@@ -69,12 +70,13 @@ export function formatTimeUntilDue(dueTime: number): string {
  * @param card - The flashcard with SM-2 data
  * @returns Object with debug information
  */
-export function getCardDebugInfo(card: { ef: number; intervalDays: number; reps: number; lapses: number; due: number; phase: string; stepIndex?: number }) {
+export function getCardDebugInfo(card: { ef: number; intervalDays: number; reps: number; lapses: number; due: number; phase: string; stepIndex?: number; stability?: number; difficulty?: number; fsrsState?: string }) {
   const dueTimeFormatted = formatTimeUntilDue(card.due);
   const dueDate = new Date(card.due);
+  const stability = Number.isFinite(card.stability ?? NaN) ? card.stability : undefined;
+  const difficulty = Number.isFinite(card.difficulty ?? NaN) ? card.difficulty : undefined;
   
   return {
-    easeFactor: card.ef.toFixed(2),
     intervalDays: card.intervalDays,
     consecutiveCorrect: card.reps,
     lapses: card.lapses,
@@ -83,5 +85,8 @@ export function getCardDebugInfo(card: { ef: number; intervalDays: number; reps:
     isDue: card.due <= Date.now(),
     phase: card.phase,
     stepIndex: card.stepIndex,
+    stability,
+    difficulty,
+    fsrsState: card.fsrsState,
   };
 }

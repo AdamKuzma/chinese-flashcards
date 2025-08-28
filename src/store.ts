@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Card, Deck } from './types.ts';
 import { ReviewQuality } from './types.ts';
-import { sm2, isLeech, initializeCard } from './utils/sm2';
+import { scheduleWithFsrs, isLeechFsrs, initializeFsrsForNewCard, normalizeFsrsFields } from './utils/fsrsAdapter';
 
 interface FlashcardStore {
   // Data
@@ -10,13 +10,14 @@ interface FlashcardStore {
   decks: Deck[];
 
   // UI State
-  currentCardIndex: number;
+  // Session state (queue-based)
+  sessionActive: boolean;
+  sessionQueue: string[]; // card IDs
+  currentId?: string;
   isShowingAnswer: boolean;
-  isReviewing: boolean;
+  isReviewing: boolean; // alias of sessionActive for UI compatibility
   selectedDeckId?: string;
   reviewAll?: boolean;
-  requeuedCards: string[]; // Card IDs that need to be reviewed again in current session
-  reviewedRequeuedCards: Set<string>; // Track which requeued cards have been reviewed
 
   // Actions
   // Card management
@@ -43,6 +44,9 @@ interface FlashcardStore {
   getDueCards: (deckId?: string) => Card[];
   getAllCards: (deckId?: string) => Card[];
   getTodaysReviewCount: () => number;
+  // Session helpers
+  getCurrentCard: () => Card | null;
+  getSessionPosition: () => { index: number; total: number };
 
   // UI Actions
   setCurrentCardIndex: (index: number) => void;
@@ -119,29 +123,38 @@ export const useFlashcardStore = create<FlashcardStore>()(
           updatedAt: Date.now(),
         },
       ],
-      currentCardIndex: 0,
+      sessionActive: false,
+      sessionQueue: [],
+      currentId: undefined,
       isShowingAnswer: false,
       isReviewing: false,
       selectedDeckId: undefined,
       reviewAll: false,
-      requeuedCards: [],
-      reviewedRequeuedCards: new Set<string>(),
+      
 
       // Card management
       addCard: (cardData) => {
         const now = Date.now();
-        const sm2State = initializeCard();
+        const fsrsState = initializeFsrsForNewCard(now);
         
         const newCard: Card = {
           ...cardData,
           id: crypto.randomUUID(),
-          ef: sm2State.ef,
-          intervalDays: sm2State.intervalDays,
-          reps: sm2State.reps,
-          lapses: sm2State.lapses,
-          due: sm2State.due,
-          phase: sm2State.phase,
-          stepIndex: sm2State.stepIndex,
+          ef: fsrsState.ef,
+          intervalDays: fsrsState.intervalDays,
+          reps: fsrsState.reps,
+          lapses: fsrsState.lapses,
+          due: fsrsState.due,
+          phase: fsrsState.phase,
+          stepIndex: fsrsState.stepIndex,
+          // FSRS fields
+          stability: fsrsState.stability,
+          difficulty: fsrsState.difficulty,
+          fsrsState: fsrsState.fsrsState,
+          fsrsLastReview: fsrsState.fsrsLastReview,
+          fsrsLearningSteps: fsrsState.fsrsLearningSteps,
+          fsrsScheduledDays: fsrsState.fsrsScheduledDays,
+          fsrsElapsedDays: fsrsState.fsrsElapsedDays,
           createdAt: now,
           updatedAt: now,
         };
@@ -246,26 +259,39 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
       // Review logic
       startReview: (deckId, reviewAll = false) => {
+        const now = Date.now();
+        const allCards = get().cards;
+        let source = allCards;
+        if (deckId) {
+          const deck = get().getDeck(deckId);
+          source = deck ? allCards.filter((c) => deck.cardIds.includes(c.id)) : [];
+        }
+        const ids = (reviewAll ? source : source.filter((c) => c.due <= now && !c.suspended)).map((c) => c.id);
+        // Shuffle
+        for (let i = ids.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ids[i], ids[j]] = [ids[j], ids[i]];
+        }
         set({
           selectedDeckId: deckId,
-          isReviewing: true,
-          currentCardIndex: 0,
+          isReviewing: ids.length > 0,
+          sessionActive: ids.length > 0,
+          sessionQueue: ids,
+          currentId: ids[0],
           isShowingAnswer: false,
           reviewAll: reviewAll,
-          requeuedCards: [],
-          reviewedRequeuedCards: new Set<string>(),
         });
       },
 
       stopReview: () => {
         set({
           isReviewing: false,
+          sessionActive: false,
           selectedDeckId: undefined,
-          currentCardIndex: 0,
+          sessionQueue: [],
+          currentId: undefined,
           isShowingAnswer: false,
           reviewAll: false,
-          requeuedCards: [],
-          reviewedRequeuedCards: new Set<string>(),
         });
       },
 
@@ -278,91 +304,50 @@ export const useFlashcardStore = create<FlashcardStore>()(
       },
 
       reviewCard: (quality) => {
-        const { currentCardIndex, selectedDeckId, getDueCards, getAllCards, reviewAll } = get();
-        const cardsToReview = reviewAll 
-          ? (selectedDeckId ? getAllCards(selectedDeckId) : getAllCards())
-          : (selectedDeckId ? getDueCards(selectedDeckId) : getDueCards());
-        const currentCard = cardsToReview[currentCardIndex];
-
+        const { currentId } = get();
+        if (!currentId) return;
+        const currentCard = get().getCard(currentId);
         if (!currentCard) return;
 
         const now = Date.now();
-        
-        // Create current review state
-        const currentState = {
-          ef: currentCard.ef,
-          intervalDays: currentCard.intervalDays,
-          reps: currentCard.reps,
-          lapses: currentCard.lapses,
-          due: currentCard.due,
-          phase: currentCard.phase,
-          stepIndex: currentCard.stepIndex
-        };
+        const { updates } = scheduleWithFsrs(currentCard, quality, now);
+        const suspended = isLeechFsrs({ ...currentCard, ...updates });
 
-        // Calculate new state using SM-2
-        const newState = sm2(currentState, quality, now);
-        
-        // Check for leech
-        const suspended = isLeech(newState);
-
-        // Update card
+        // Persist card
         set((state) => ({
           cards: state.cards.map((card) =>
             card.id === currentCard.id
-              ? {
-                  ...card,
-                  ef: newState.ef,
-                  intervalDays: newState.intervalDays,
-                  reps: newState.reps,
-                  lapses: newState.lapses,
-                  due: newState.due,
-                  phase: newState.phase,
-                  stepIndex: newState.stepIndex,
-                  suspended,
-                  updatedAt: now,
-                }
+              ? { ...card, ...updates, suspended, updatedAt: now }
               : card
           ),
         }));
 
-        // Handle "again" cards - add them to the end of current session for immediate retry
-        if (quality === 'again' && (newState.phase === 'learning' || newState.phase === 'relearning')) {
-          // Add the card to requeuedCards so it appears at the end of current session
-          set((state) => ({
-            requeuedCards: [...state.requeuedCards, currentCard.id]
-          }));
+        // Advance session queue
+        const q = [...get().sessionQueue];
+        // Ensure current is at head; if not, remove it from wherever it is
+        const idx = q.indexOf(currentId);
+        if (idx >= 0) q.splice(idx, 1);
+
+        if (quality === 'again' && ((updates.phase === 'learning') || (updates.phase === 'relearning'))) {
+          const insertAt = Math.min(10, q.length);
+          q.splice(insertAt, 0, currentId);
         }
 
-        // Mark this card as reviewed if it was a requeued card
-        if (get().requeuedCards.includes(currentCard.id)) {
-          set((state) => ({
-            reviewedRequeuedCards: new Set([...state.reviewedRequeuedCards, currentCard.id])
-          }));
-        }
-
-        // Check if this was the last card in the current queue (including requeued cards)
-        const totalCardsInSession = cardsToReview.length + get().requeuedCards.length;
-        if (currentCardIndex >= totalCardsInSession - 1) {
-          // End the review session and clear requeued cards
+        const nextId = q[0];
+        set({ sessionQueue: q, currentId: nextId, isShowingAnswer: false, isReviewing: !!nextId, sessionActive: !!nextId });
+        if (!nextId) {
           get().stopReview();
-        } else {
-          // Move to next card
-          get().nextCard();
         }
       },
 
       getNextCard: () => {
-        const { selectedDeckId, getDueCards, getAllCards, reviewAll } = get();
-        const cardsToReview = reviewAll 
-          ? (selectedDeckId ? getAllCards(selectedDeckId) : getAllCards())
-          : (selectedDeckId ? getDueCards(selectedDeckId) : getDueCards());
-        return cardsToReview.length > 0 ? cardsToReview[0] : null;
+        const nextId = get().sessionQueue[0];
+        return nextId ? get().getCard(nextId) || null : null;
       },
 
       getDueCards: (deckId) => {
         const now = Date.now();
-        const allCards = get().cards;
-        const { requeuedCards, reviewedRequeuedCards } = get();
+        const allCards = get().cards.map((c) => normalizeFsrsFields(c));
 
         let cardsToFilter = allCards;
         if (deckId) {
@@ -370,37 +355,16 @@ export const useFlashcardStore = create<FlashcardStore>()(
           cardsToFilter = deck ? allCards.filter(card => deck.cardIds.includes(card.id)) : [];
         }
 
-        const dueCards = cardsToFilter.filter((card) => card.due <= now && !card.suspended);
-        
-        // Merge requeued cards with due cards for the current session
-        if (requeuedCards.length > 0) {
-          // Filter out already-reviewed requeued cards
-          const unreviewedRequeuedCards = requeuedCards.filter(id => !reviewedRequeuedCards.has(id));
-          const requeuedCardObjects = unreviewedRequeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
-          // Return due cards first, then unreviewed requeued cards
-          return [...dueCards, ...requeuedCardObjects];
-        }
-        
-        return dueCards;
+        return cardsToFilter.filter((card) => card.due <= now && !card.suspended);
       },
 
       getAllCards: (deckId) => {
-        const allCards = get().cards;
-        const { requeuedCards, reviewedRequeuedCards } = get();
+        const allCards = get().cards.map((c) => normalizeFsrsFields(c));
 
         let cardsToFilter = allCards;
         if (deckId) {
           const deck = get().getDeck(deckId);
           cardsToFilter = deck ? allCards.filter(card => deck.cardIds.includes(card.id)) : [];
-        }
-
-        // Merge requeued cards with all cards for the current session
-        if (requeuedCards.length > 0) {
-          // Filter out already-reviewed requeued cards
-          const unreviewedRequeuedCards = requeuedCards.filter(id => !reviewedRequeuedCards.has(id));
-          const requeuedCardObjects = unreviewedRequeuedCards.map(id => allCards.find(card => card.id === id)).filter(Boolean) as Card[];
-          // Return all cards first, then unreviewed requeued cards
-          return [...cardsToFilter, ...requeuedCardObjects];
         }
 
         return cardsToFilter;
@@ -414,9 +378,20 @@ export const useFlashcardStore = create<FlashcardStore>()(
         return get().cards.filter((card) => card.due >= startOfDay && card.due <= endOfDay).length;
       },
 
+      // Session helpers
+      getCurrentCard: () => {
+        const id = get().currentId;
+        return id ? get().getCard(id) || null : null;
+      },
+      getSessionPosition: () => {
+        const { sessionQueue, currentId } = get();
+        const index = currentId ? Math.max(0, sessionQueue.indexOf(currentId)) : -1;
+        return { index, total: sessionQueue.length };
+      },
+
       // UI Actions
-      setCurrentCardIndex: (index) => {
-        set({ currentCardIndex: index, isShowingAnswer: false });
+      setCurrentCardIndex: () => {
+        // deprecated in queue model
       },
 
       setSelectedDeckId: (deckId) => {
@@ -424,22 +399,18 @@ export const useFlashcardStore = create<FlashcardStore>()(
       },
 
       nextCard: () => {
-        const { selectedDeckId, getDueCards, getAllCards, reviewAll } = get();
-        const cardsToReview = reviewAll 
-          ? (selectedDeckId ? getAllCards(selectedDeckId) : getAllCards())
-          : (selectedDeckId ? getDueCards(selectedDeckId) : getDueCards());
-
-        set((state) => ({
-          currentCardIndex: Math.min(state.currentCardIndex + 1, cardsToReview.length - 1),
-          isShowingAnswer: false,
-        }));
+        // Optional manual navigation within queue (does not pop)
+        const { sessionQueue, currentId } = get();
+        const idx = currentId ? sessionQueue.indexOf(currentId) : -1;
+        const nextId = idx >= 0 && idx + 1 < sessionQueue.length ? sessionQueue[idx + 1] : currentId;
+        set({ currentId: nextId, isShowingAnswer: false });
       },
 
       previousCard: () => {
-        set((state) => ({
-          currentCardIndex: Math.max(state.currentCardIndex - 1, 0),
-          isShowingAnswer: false,
-        }));
+        const { sessionQueue, currentId } = get();
+        const idx = currentId ? sessionQueue.indexOf(currentId) : -1;
+        const prevId = idx > 0 ? sessionQueue[idx - 1] : currentId;
+        set({ currentId: prevId, isShowingAnswer: false });
       },
 
       // Import/Export
@@ -469,13 +440,13 @@ export const useFlashcardStore = create<FlashcardStore>()(
         set({
           cards: newCards,
           decks: newDecks,
-          currentCardIndex: 0,
           isShowingAnswer: false,
           isReviewing: false,
+          sessionActive: false,
           selectedDeckId: undefined,
           reviewAll: false,
-          requeuedCards: [],
-          reviewedRequeuedCards: new Set<string>(),
+          sessionQueue: [],
+          currentId: undefined,
         });
       },
     }),
