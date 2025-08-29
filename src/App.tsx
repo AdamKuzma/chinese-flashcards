@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Flashcard, Toast, HelpModal, Button, EllipsisMenu, ImportModal } from './components';
+import { Flashcard, Toast, HelpModal, Button, EllipsisMenu, ImportModal, CreateDeckModal, DeckDetail } from './components';
 import { dbOperations } from './database.ts';
 import { ReviewQuality } from './types.ts';
 import { formatTimeUntilDue } from './utils';
+import DecksIcon from './assets/Decks.svg';
+import LibraryIcon from './assets/Library.svg';
+import StatsIcon from './assets/Stats.svg';
+import ProfileIcon from './assets/Profile.svg';
+import PlusIcon from './assets/Plus.svg';
 import './App.css';
 
 function App() {
   const {
     cards,
+    decks,
     // removed currentCardIndex for queue model
     isShowingAnswer,
     isReviewing,
@@ -24,17 +30,18 @@ function App() {
     addCard,
     deleteCard,
     updateCard,
-    getTodaysReviewCount,
+    // getTodaysReviewCount,
     exportData,
     importData,
     // new helpers
     getCurrentCard,
     getSessionPosition,
+    setSelectedDeckId,
   } = useFlashcardStore();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    return (savedTab as 'dashboard' | 'review' | 'browse' | 'add-card') || 'dashboard';
+    return (savedTab as 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail') || 'dashboard';
   });
   const [newCardForm, setNewCardForm] = useState({
     hanzi: '',
@@ -51,6 +58,7 @@ function App() {
   const [editValue, setEditValue] = useState('');
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showCreateDeck, setShowCreateDeck] = useState(false);
 
   // Initialize sample data on first load
   useEffect(() => {
@@ -65,6 +73,16 @@ function App() {
     };
 
     initializeData();
+    const toReview = () => handleTabChange('review');
+    window.addEventListener('navigate-review', toReview as EventListener);
+    
+    // Restore deck detail view if a deck was previously selected
+    const savedTab = localStorage.getItem('activeTab');
+    const savedDeckId = useFlashcardStore.getState().selectedDeckId;
+    if (savedTab === 'deck-detail' && savedDeckId) {
+      setActiveTab('deck-detail');
+    }
+    return () => window.removeEventListener('navigate-review', toReview as EventListener);
   }, []);
 
   const dueCards = selectedDeckId ? getDueCards(selectedDeckId) : getDueCards();
@@ -72,7 +90,6 @@ function App() {
   const cardsToReview = reviewAll ? allCards : dueCards;
   const currentCard = getCurrentCard();
   const { index: sessionIndex, total: sessionTotal } = getSessionPosition();
-  const todaysReviews = getTodaysReviewCount();
 
   // Validation functions
   const checkForDuplicateCard = (field: 'hanzi' | 'english', value: string) => {
@@ -103,6 +120,13 @@ function App() {
   const handleAddCard = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCardForm.hanzi || !newCardForm.english) return;
+    if (decks.length === 0) {
+      setShowCreateDeck(true);
+      return;
+    }
+    if (!selectedDeckId && decks.length > 0) {
+      setSelectedDeckId(decks[0].id);
+    }
     
     // Check for duplicates before submitting
     const hanziExists = cards.some(card => 
@@ -153,7 +177,7 @@ function App() {
     setShowToast(true);
   };
 
-  const handleTabChange = (tab: 'dashboard' | 'review' | 'browse' | 'add-card') => {
+  const handleTabChange = (tab: 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail') => {
     setActiveTab(tab);
     localStorage.setItem('activeTab', tab);
   };
@@ -221,108 +245,103 @@ function App() {
 
   return (
     <div className="h-screen overflow-hidden">
-
-      {/* Tabs */}
-
-      <header className="">
-        <div className="w-[700px] mx-auto px-4 py-4">
-                     <nav className="mt-4 flex justify-center border-b border-granite-custom">
-            <button
-              onClick={() => handleTabChange('dashboard')}
-              className={`px-12 py-2 rounded-t-lg border-b-1 ${
-                activeTab === 'dashboard'
-                  ? 'text-light-custom border-light-custom'
-                  : 'text-gray-custom border-transparent'
-              }`}
-            >
-              Profile
-            </button>
-            <button
-              onClick={() => handleTabChange('review')}
-              className={`px-12 py-2 rounded-t-lg border-b-1 ${
-                activeTab === 'review'
-                  ? 'text-light-custom border-light-custom'
-                  : 'text-gray-custom border-transparent'
-              }`}
-            >
-              Review 
-            </button>
-            <button
-              onClick={() => handleTabChange('browse')}
-              className={`px-12 py-2 rounded-t-lg border-b-1 ${
-                activeTab === 'browse'
-                  ? 'text-light-custom border-light-custom'
-                  : 'text-gray-custom border-transparent'
-              }`}
-            >
-              Browse
-            </button>
-            <button
-              onClick={() => handleTabChange('add-card')}
-              className={`px-12 py-2 rounded-t-lg border-b-1 ${
-                activeTab === 'add-card'
-                  ? 'text-light-custom border-light-custom'
-                  : 'text-gray-custom border-transparent'
-              }`}
-            >
-              Add
-            </button>
-          </nav>
+      <div className="w-[780px] mx-auto h-screen border-l border-r border-granite-custom flex flex-col relative">
+        {/* Left-side vertical icon navigation (outside main container) */}
+        <div className="absolute left-0 top-1 -translate-x-full transform z-40 flex flex-col items-center">
+          <button
+            onClick={() => handleTabChange('dashboard')}
+            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
+            title="Decks"
+            aria-label="Decks"
+          >
+            <img src={DecksIcon} alt="Decks" className="w-7 h-7" />
+          </button>
+          <button
+            onClick={() => handleTabChange('browse')}
+            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
+            title="Library"
+            aria-label="Library"
+          >
+            <img src={LibraryIcon} alt="Library" className="w-7 h-7" />
+          </button>
+          <button
+            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
+            title="Stats"
+            aria-label="Stats"
+          >
+            <img src={StatsIcon} alt="Stats" className="w-7 h-7" />
+          </button>
+          <button
+            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
+            title="Profile"
+            aria-label="Profile"
+          >
+            <img src={ProfileIcon} alt="Profile" className="w-5.5 h-5.5" />
+          </button>
         </div>
-      </header>
-
       {/* Main Content */}
 
-      <main className="w-[700px] mx-auto px-4 pt-8">
+      <main className="px-8 pt-8 flex-1">
         <div className="w-full">
           {activeTab === 'dashboard' && (
-            <div className="flex justify-between items-center">
-              <h1 className="text-left">Profile</h1>
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-silver-custom">Total</span>
-                  <span className="text-sm text-light-custom font-medium">{cards.length}</span>
-                </div>
-                <div className="w-px h-4 border-granite-custom border-l"></div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-silver-custom">Due</span>
-                  <span className="text-sm text-light-custom font-medium">{dueCards.length}</span>
-                </div>
-                <div className="w-px h-4 border-granite-custom border-l"></div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-silver-custom">Review</span>
-                  <span className="text-sm text-light-custom font-medium">{todaysReviews}</span>
-                </div>
-              </div>
+            <div className="flex justify-between items-center mb-12">
+              <h1 className="text-left">Decks</h1>
             </div>
           )}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              <div className="mt-24">
-                <h3 className="text-sm text-silver-custom text-left mb-4">Recent cards</h3>
-                {cards.length === 0 ? (
-                  <p className="text-gray-custom">No cards yet. Add your first card to get started!</p>
-                ) : (
-                    <div className="space-y-0">
-                      {cards.slice(0, 5).map((card, index) => (
-                        <div key={card.id} className={`flex justify-between items-center py-4 ${index < cards.slice(0, 5).length - 1 ? 'border-b border-granite-custom' : ''}`}>
-                          <div className="flex items-center flex-1">
-                            <div className="w-20 text-left">
-                              <span className="font-medium text-light-custom">{card.hanzi}</span>
-                            </div>
-                            <div className="flex-1 text-left">
-                              <span className="text-gray-custom">{card.english}</span>
-                            </div>
-                          </div>
-                          <div className="text-sm text-gray-custom w-20 text-right">
-                            {card.reps} reviews
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </div>
+              {decks.length === 0 ? (
+                <div className="mt-24 text-center">
+                  <h3 className="text-lg text-light-custom mb-2">No Decks Created</h3>
+                  <p className="text-sm text-silver-custom mb-6">Create a new deck to start adding cards and learning.</p>
+                  <Button onClick={() => setShowCreateDeck(true)} size="md">Create deck</Button>
+                </div>
+              ) : (
+                <div className="mt-6 grid grid-cols-3 place-items-center gap-6">
+                  {decks.map((deck) => (
+                    <button
+                      key={deck.id}
+                      className="text-left"
+                      onClick={() => {
+                        setSelectedDeckId(deck.id);
+                        handleTabChange('deck-detail');
+                      }}
+                    >
+                      <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl rotate-[2deg] hover:rotate-[4deg] hover:bg-granite-custom/80 transition-transform transition-colors" />
+                      <div className="mt-6 text-light-custom text-sm truncate w-[164px] text-center">{deck.name}</div>
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowCreateDeck(true)}
+                    className="text-left"
+                    title="Create deck"
+                    aria-label="Create deck"
+                  >
+                    <div className="w-[164px] h-[196px] flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-semidark-custom hover:bg-granite-custom transition-colors flex items-center justify-center">
+                        <img src={PlusIcon} alt="Create deck" className="w-5 h-5" />
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              )}
             </div>
+          )}
+
+          {activeTab === 'deck-detail' && selectedDeckId && (
+            <DeckDetail
+              deckId={selectedDeckId}
+              onStartReview={(all) => { startReview(selectedDeckId, all); handleTabChange('review'); }}
+              onAddCard={() => handleTabChange('add-card')}
+              onDeleteDeck={() => {
+                useFlashcardStore.getState().deleteDeck(selectedDeckId);
+                setSelectedDeckId(undefined);
+                handleTabChange('dashboard');
+                setToastMessage('Deck deleted');
+                setShowToast(true);
+              }}
+              onToast={(m) => { setToastMessage(m); setShowToast(true); }}
+            />
           )}
 
           {activeTab === 'review' && (
@@ -397,7 +416,7 @@ function App() {
               
               {/* Column Headers */}
               {allCards.length > 0 && (
-                <div className="flex justify_between items-center py-3 border-b-1 border-granite-custom">
+                <div className="flex justify-between items-center py-3 border-b-1 border-granite-custom">
                   <div className="flex items-center flex-1">
                     <div className="w-20 text-left">
                       <span className="text-xs text-silver-custom font-medium">FRONT</span>
@@ -448,7 +467,7 @@ function App() {
                               onChange={(e) => setEditValue(e.target.value)}
                               onBlur={handleSaveEdit}
                               onKeyDown={handleEditKeyDown}
-                              className="input-edit w_full px-2 py-1 bg-granite-custom rounded"
+                              className="input-edit w-full px-2 py-1 bg-granite-custom rounded"
                               autoFocus
                             />
                           ) : (
@@ -530,7 +549,7 @@ function App() {
                           }
                         }}
                         onBlur={(e) => handleInputBlur('english', e.target.value)}
-                        className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline_none ${
+                        className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none ${
                           validationErrors.english ? 'ring-1 ring-red-500' : ''
                         }`}
                         placeholder="hello"
@@ -576,7 +595,7 @@ function App() {
       {/* Help Button - Fixed position at bottom right */}
       <button
         onClick={() => setShowHelpModal(true)}
-        className="fixed bottom-6 right-6 w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items_center justify-center transition-colors z-40"
+        className="fixed bottom-6 right-6 w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items-center justify-center transition-colors z-40"
         aria-label="Help"
         title="Help & Documentation"
       >
@@ -596,11 +615,23 @@ function App() {
         onImport={handleImport}
       />
 
+      <CreateDeckModal
+        isOpen={showCreateDeck}
+        onClose={() => setShowCreateDeck(false)}
+        onCreate={({ name, description }) => {
+          const id = useFlashcardStore.getState().addDeck({ name, description });
+          useFlashcardStore.getState().setSelectedDeckId(id);
+          setShowCreateDeck(false);
+          handleTabChange('deck-detail');
+        }}
+      />
+
       {/* Help Modal */}
       <HelpModal 
         isOpen={showHelpModal}
         onClose={() => setShowHelpModal(false)}
       />
+      </div>
     </div>
   );
 }

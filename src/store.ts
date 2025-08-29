@@ -27,7 +27,7 @@ interface FlashcardStore {
   getCard: (id: string) => Card | undefined;
 
   // Deck management
-  addDeck: (deck: Omit<Deck, 'id' | 'createdAt' | 'updatedAt' | 'cardIds'>) => void;
+  addDeck: (deck: Omit<Deck, 'id' | 'createdAt' | 'updatedAt' | 'cardIds'>) => string;
   updateDeck: (id: string, updates: Partial<Deck>) => void;
   deleteDeck: (id: string) => void;
   getDeck: (id: string) => Deck | undefined;
@@ -36,6 +36,7 @@ interface FlashcardStore {
 
   // Review logic
   startReview: (deckId?: string, reviewAll?: boolean) => void;
+  startReviewWithCardIds: (cardIds: string[]) => void;
   stopReview: () => void;
   showAnswer: () => void;
   hideAnswer: () => void;
@@ -159,9 +160,19 @@ export const useFlashcardStore = create<FlashcardStore>()(
           updatedAt: now,
         };
 
-        set((state) => ({
-          cards: [...state.cards, newCard],
-        }));
+        set((state) => {
+          const updates: Partial<FlashcardStore> & { cards: Card[]; decks?: Deck[] } = {
+            cards: [...state.cards, newCard],
+          };
+          if (state.selectedDeckId) {
+            updates.decks = state.decks.map((deck) =>
+              deck.id === state.selectedDeckId
+                ? { ...deck, cardIds: [...deck.cardIds, newCard.id], updatedAt: now }
+                : deck
+            );
+          }
+          return updates as any;
+        });
       },
 
       updateCard: (id, updates) => {
@@ -193,9 +204,10 @@ export const useFlashcardStore = create<FlashcardStore>()(
       // Deck management
       addDeck: (deckData) => {
         const now = Date.now();
+        const id = crypto.randomUUID();
         const newDeck: Deck = {
           ...deckData,
-          id: crypto.randomUUID(),
+          id,
           cardIds: [],
           createdAt: now,
           updatedAt: now,
@@ -204,6 +216,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
         set((state) => ({
           decks: [...state.decks, newDeck],
         }));
+        return id;
       },
 
       updateDeck: (id, updates) => {
@@ -280,6 +293,22 @@ export const useFlashcardStore = create<FlashcardStore>()(
           currentId: ids[0],
           isShowingAnswer: false,
           reviewAll: reviewAll,
+        });
+      },
+
+      startReviewWithCardIds: (cardIds) => {
+        const ids = [...cardIds];
+        // Shuffle
+        for (let i = ids.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [ids[i], ids[j]] = [ids[j], ids[i]];
+        }
+        set({
+          isReviewing: ids.length > 0,
+          sessionActive: ids.length > 0,
+          sessionQueue: ids,
+          currentId: ids[0],
+          isShowingAnswer: false,
         });
       },
 
@@ -455,6 +484,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       partialize: (state) => ({
         cards: state.cards,
         decks: state.decks,
+        selectedDeckId: state.selectedDeckId,
       }),
     }
   )

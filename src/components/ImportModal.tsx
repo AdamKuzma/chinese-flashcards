@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import Button from './Button';
+// Button not needed; Modal header provides close
+import { Modal } from './Modal';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -74,58 +75,44 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-      <div className="bg-granite-custom rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-light-custom">Import Flashcard Data</h2>
-          <Button
-            onClick={onClose}
-            variant="cancel"
-            size="sm"
-            className="text-gray-400 hover:text-light-custom"
-          >
-            ✕
-          </Button>
-        </div>
-
-        <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            dragActive 
-              ? 'border-blue-400 bg-blue-50/10' 
-              : 'border-gray-400 hover:border-gray-300'
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={handleClick}
-        >
-          <div className="text-light-custom">
-            <div className="text-4xl mb-2">📁</div>
-            <p className="mb-2">Drop your JSON file here</p>
-            <p className="text-sm text-gray-400">or click to browse</p>
-          </div>
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,application/json"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-
-        {error && (
-          <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        <div className="mt-4 text-sm text-gray-400">
-          <p>This will replace all existing cards with the imported data.</p>
-          <p>Make sure to backup your current data before importing.</p>
+    <Modal isOpen={isOpen} onClose={onClose} title="Import Flashcard Data">
+      <div
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          dragActive 
+            ? 'border-blue-400 bg-blue-50/10' 
+            : 'border-gray-400 hover:border-gray-300'
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={handleClick}
+      >
+        <div className="text-light-custom">
+          <div className="text-4xl mb-2">📁</div>
+          <p className="mb-2">Drop your JSON file here</p>
+          <p className="text-sm text-gray-400">or click to browse</p>
         </div>
       </div>
-    </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
+      {error && (
+        <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+          <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="mt-4 text-sm text-gray-400">
+        <p>This will replace all existing cards with the imported data.</p>
+        <p>Make sure to backup your current data before importing.</p>
+      </div>
+    </Modal>
   );
 };

@@ -18,7 +18,8 @@
   --color-light: #EEEEEE;
   --color-silver: #BBBBBB;
   --color-gray: #888888;
-  --color-granite: #393939;
+  --color-granite: #333333;
+  --color-semidark: #282828;
   --color-dark: #222222;
 }
 
@@ -44,7 +45,7 @@ html {
 }
 
 h1 {
-  font-size: 1.5em;
+  font-size: 1em;
   line-height: 1.1;
   font-weight: 400;
   color: var(--color-light);
@@ -87,6 +88,9 @@ button {
   background-color: var(--color-dark) !important;
 }
 
+.bg-semidark-custom {
+  background-color: var(--color-semidark) !important;
+}
 
 .input-custom {
   color: var(--color-light) !important;
