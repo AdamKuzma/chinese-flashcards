@@ -5,6 +5,10 @@ import { AddCardModal } from './AddCardModal';
 import { EditDeckModal } from './EditDeckModal';
 import { EditCardModal } from './EditCardModal';
 import { PopoverMenu } from './PopoverMenu';
+import ShareIcon from '../assets/Share.svg';
+import { ImportModal } from './ImportModal';
+import type { Card } from '../types';
+import type { Deck } from '../types';
 
 interface DeckDetailProps {
   deckId: string;
@@ -14,13 +18,14 @@ interface DeckDetailProps {
   onToast: (message: string) => void;
 }
 
-export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _onStartReview, onAddCard: _onAddCard, onDeleteDeck, onToast }) => {
+export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, onToast }) => {
   const { getDeck, cards } = useFlashcardStore();
   const deck = getDeck(deckId);
   // deprecated with PopoverMenu, retained if needed elsewhere
   const [activeTab, setActiveTab] = useState<'lessons' | 'cards'>('lessons');
   const [showAddCard, setShowAddCard] = useState(false);
   const [showEditDeck, setShowEditDeck] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // No-op
   useEffect(() => {}, []);
@@ -31,9 +36,38 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
 
   const deckCards = cards.filter((c) => deck.cardIds.includes(c.id));
   const now = Date.now();
-  const newCount = deckCards.filter((c) => ((c as any).fsrsState === 'New') || (!('fsrsState' in c) && c.reps === 0)).length;
-  const dueCount = deckCards.filter((c) => c.due <= now && !c.suspended && ((c as any).fsrsState !== 'New' && ('fsrsState' in c || c.reps > 0))).length;
-  const learnedCount = deckCards.filter((c) => (((c as any).fsrsState === 'Review' || (c as any).fsrsState === 'Relearning') && c.due > now)).length;
+  const newCount = deckCards.filter((c) => {
+    const card = c as Card & { fsrsState?: string };
+    return card.fsrsState === 'New' || (!('fsrsState' in card) && c.reps === 0);
+  }).length;
+  const dueCount = deckCards.filter((c) => {
+    const card = c as Card & { fsrsState?: string };
+    return c.due <= now && !c.suspended && (card.fsrsState !== 'New' && ('fsrsState' in card || c.reps > 0));
+  }).length;
+  const learnedCount = deckCards.filter((c) => {
+    const card = c as Card & { fsrsState?: string };
+    return (card.fsrsState === 'Review' || card.fsrsState === 'Relearning') && c.due > now;
+  }).length;
+
+  const handleExportDeck = () => {
+    try {
+      const deckData = {
+        deck: deck,
+        cards: deckCards
+      };
+      const dataStr = JSON.stringify(deckData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${deck.name}-export.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      onToast('Deck exported successfully');
+    } catch {
+      onToast('Export failed');
+    }
+  };
 
   return (
     <div className="mt-[-4px] relative h-full min-h-0 flex flex-col">
@@ -61,8 +95,8 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
             trigger={({ onClick, ref }) => (
               <button
                 onClick={onClick}
-                ref={ref as any}
-                className="w-8 h-8 rounded-full hover:bg-granite-custom flex items-center justify-center"
+                ref={ref as React.RefObject<HTMLButtonElement>}
+                className="deck-option-btn"
                 aria-label="Deck options"
                 title="Deck options"
               >
@@ -73,6 +107,24 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
               { key: 'add', label: 'Add cards', onClick: () => setShowAddCard(true) },
               { key: 'edit', label: 'Edit deck', onClick: () => setShowEditDeck(true) },
               { key: 'delete', label: 'Delete deck', onClick: () => onDeleteDeck(), className: 'text-red-300' },
+            ]}
+          />
+          <PopoverMenu
+            placement="bottom-right"
+            trigger={({ onClick, ref }) => (
+              <button
+                onClick={onClick}
+                ref={ref as React.RefObject<HTMLButtonElement>}
+                className="deck-option-btn"
+                aria-label="Share options"
+                title="Share options"
+              >
+                <img src={ShareIcon} alt="Share" className="w-4 h-4" />
+              </button>
+            )}
+            actions={[
+              { key: 'export', label: 'Export deck', onClick: () => handleExportDeck() },
+              { key: 'import', label: 'Import cards', onClick: () => setShowImportModal(true) },
             ]}
           />
         </div>
@@ -123,7 +175,10 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
                   const end = start + lessonSize;
                   const slice = deckCards.slice(start, end);
                   const now = Date.now();
-                  const learned = slice.filter((c) => ((c as any).fsrsState === 'Review' || (c as any).fsrsState === 'Relearning') && c.due > now).length;
+                  const learned = slice.filter((c) => {
+                    const card = c as Card & { fsrsState?: string };
+                    return (card.fsrsState === 'Review' || card.fsrsState === 'Relearning') && c.due > now;
+                  }).length;
                   const total = slice.length || 1;
                   const pct = Math.max(0, Math.min(100, Math.round((learned / total) * 100)));
 
@@ -169,11 +224,25 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
         onClose={() => setShowEditDeck(false)}
         initialName={deck.name}
         initialDescription={deck.description}
-        initialImage={(deck as any).image}
+        initialImage={(deck as Deck & { image?: string }).image}
         onSave={({ name, description, image }) => {
           useFlashcardStore.getState().updateDeck(deckId, { name, description, image });
           setShowEditDeck(false);
           onToast('Deck saved');
+        }}
+      />
+
+      <ImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onImport={() => {
+          try {
+            // Handle deck-specific import logic here
+            onToast('Import functionality coming soon');
+            setShowImportModal(false);
+          } catch {
+            onToast('Import failed');
+          }
         }}
       />
     </div>
@@ -257,7 +326,7 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
                 trigger={({ onClick, ref }) => (
                   <button
                     onClick={(e) => { e.stopPropagation(); onClick(); }}
-                    ref={ref as any}
+                    ref={ref as React.RefObject<HTMLButtonElement>}
                     className="w-7 h-7 rounded-lg hidden group-hover:flex items-center justify-center hover:bg-neutral-700 text-light-custom"
                     aria-label="Card options"
                   >

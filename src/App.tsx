@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Toast, HelpModal, Button, EllipsisMenu, ImportModal, CreateDeckModal, DeckDetail, ReviewView, Nav } from './components';
+import { Toast, HelpModal, Button, ImportModal, CreateDeckModal, DeckDetail, ReviewView, Nav } from './components';
 import { dbOperations } from './database.ts';
+import type { Card, Deck } from './types';
 // import { ReviewQuality } from './types.ts';
 import { formatTimeUntilDue } from './utils';
 // Icons are used inside Nav component
@@ -13,8 +14,8 @@ function App() {
     cards,
     decks,
     // removed currentCardIndex for queue model
-    // isShowingAnswer,
     // isReviewing,
+    // isShowingAnswer,
     selectedDeckId,
     // reviewAll,
     startReview,
@@ -28,7 +29,6 @@ function App() {
     deleteCard,
     updateCard,
     // getTodaysReviewCount,
-    exportData,
     importData,
     // new helpers
     // getCurrentCard,
@@ -225,20 +225,11 @@ function App() {
   //   }
   // };
 
-  const handleExport = () => {
-    try {
-      exportData();
-      showToastMessage('Data exported successfully');
-    } catch (error) {
-      showToastMessage('Export failed');
-    }
-  };
-
-  const handleImport = (data: any) => {
+  const handleImport = (data: { cards: Card[]; decks: Deck[] }) => {
     try {
       importData(data);
       showToastMessage('Data imported successfully');
-    } catch (error) {
+    } catch {
       showToastMessage('Import failed');
     }
   };
@@ -522,12 +513,6 @@ function App() {
       >
         <span className="text-md font-medium">?</span>
       </button>
-
-      {/* Ellipsis Menu */}
-      <EllipsisMenu 
-        onExport={handleExport}
-        onImport={() => setShowImportModal(true)}
-      />
 
       {/* Import Modal */}
       <ImportModal 

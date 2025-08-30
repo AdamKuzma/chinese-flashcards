@@ -82,8 +82,8 @@ export const toFsrsCard = (card: AppCard): FsrsCard => {
 export const applyFsrsResult = (card: AppCard, fsrsCard: FsrsCard, opts?: { scheduled_days?: number; learning_steps?: number }) => {
   const nextDueMs = fsrsCard.due.getTime();
   const fsrsStateString = State[fsrsCard.state] as unknown as 'New' | 'Learning' | 'Review' | 'Relearning';
-  const scheduledDays = opts?.scheduled_days ?? (card as any).fsrsScheduledDays ?? 0;
-  const learningSteps = opts?.learning_steps ?? (card as any).fsrsLearningSteps ?? fsrsCard.learning_steps ?? 0;
+  const scheduledDays = opts?.scheduled_days ?? (card as AppCard & { fsrsScheduledDays?: number }).fsrsScheduledDays ?? 0;
+  const learningSteps = opts?.learning_steps ?? (card as AppCard & { fsrsLearningSteps?: number }).fsrsLearningSteps ?? fsrsCard.learning_steps ?? 0;
 
   const intervalDays = scheduledDays || Math.max(0, Math.round((nextDueMs - Date.now()) / 86_400_000));
 
@@ -111,7 +111,7 @@ export const applyFsrsResult = (card: AppCard, fsrsCard: FsrsCard, opts?: { sche
     fsrsLearningSteps: learningSteps,
     fsrsScheduledDays: scheduledDays,
     fsrsElapsedDays: fsrsCard.elapsed_days ?? 0,
-  } as any;
+  };
 
   return updated;
 };
@@ -150,13 +150,23 @@ export const normalizeFsrsFields = (card: AppCard): AppCard => {
     fsrsElapsedDays?: number;
   } = {};
 
-  if (!Number.isFinite((card as any).stability)) normalized.stability = 0;
-  if (!Number.isFinite((card as any).difficulty)) normalized.difficulty = 0;
-  if (!Number.isFinite((card as any).fsrsLearningSteps)) normalized.fsrsLearningSteps = card.stepIndex != null ? Math.max(0, (card.stepIndex as number) + 1) : 0;
-  if (!Number.isFinite((card as any).fsrsScheduledDays)) normalized.fsrsScheduledDays = Math.max(0, Math.round((card.due - Date.now()) / 86_400_000));
-  if (!Number.isFinite((card as any).fsrsElapsedDays)) normalized.fsrsElapsedDays = 0;
-  if ((card as any).fsrsLastReview === undefined) normalized.fsrsLastReview = undefined;
-  if (!(card as any).fsrsState) {
+  const cardWithFsrs = card as AppCard & {
+    stability?: number;
+    difficulty?: number;
+    fsrsLearningSteps?: number;
+    fsrsScheduledDays?: number;
+    fsrsElapsedDays?: number;
+    fsrsLastReview?: number;
+    fsrsState?: string;
+  };
+
+  if (!Number.isFinite(cardWithFsrs.stability)) normalized.stability = 0;
+  if (!Number.isFinite(cardWithFsrs.difficulty)) normalized.difficulty = 0;
+  if (!Number.isFinite(cardWithFsrs.fsrsLearningSteps)) normalized.fsrsLearningSteps = card.stepIndex != null ? Math.max(0, (card.stepIndex as number) + 1) : 0;
+  if (!Number.isFinite(cardWithFsrs.fsrsScheduledDays)) normalized.fsrsScheduledDays = Math.max(0, Math.round((card.due - Date.now()) / 86_400_000));
+  if (!Number.isFinite(cardWithFsrs.fsrsElapsedDays)) normalized.fsrsElapsedDays = 0;
+  if (cardWithFsrs.fsrsLastReview === undefined) normalized.fsrsLastReview = undefined;
+  if (!cardWithFsrs.fsrsState) {
     // Map legacy phase to FSRS state label string via reverse index on enum
     const s = phaseToFsrsState(card.phase);
     const reverse = State as unknown as Record<number, string>;

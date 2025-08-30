@@ -228,7 +228,7 @@ describe('SM-2 Algorithm Tests', () => {
         reps: 0,
         lapses: 0,
         due: NOW,
-        phase: 'invalid-phase' as any, // Force invalid phase
+        phase: 'invalid-phase' as 'learning' | 'graduating' | 'review' | 'relearning', // Force invalid phase
         stepIndex: undefined
       };
       

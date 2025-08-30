@@ -30,7 +30,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [enterRotationX, setEnterRotationX] = useState(0);
   const [lastCardId, setLastCardId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [suppressYTransition, setSuppressYTransition] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Get review session state from store

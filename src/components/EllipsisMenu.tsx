@@ -15,7 +15,7 @@ export const EllipsisMenu: React.FC<EllipsisMenuProps> = ({ onExport, onImport }
         <div className="relative">
           <button
             onClick={onClick}
-            ref={ref as any}
+            ref={ref as React.RefObject<HTMLButtonElement>}
             className="w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items-center justify-center transition-colors"
             aria-label="More options"
             title="More options"

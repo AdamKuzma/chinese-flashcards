@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 // Button not needed; Modal header provides close
 import { Modal } from './Modal';
+import type { Card, Deck } from '../types';
 
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (data: any) => void;
+  onImport: (data: { cards: Card[]; decks: Deck[] }) => void;
 }
 
 export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport }) => {
@@ -61,8 +62,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
 
         onImport(data);
         onClose();
-      } catch (err) {
-        setError('Invalid JSON file');
+      } catch {
+        setError('Failed to parse file. Please ensure it\'s a valid JSON file.');
       }
     };
     reader.readAsText(file);

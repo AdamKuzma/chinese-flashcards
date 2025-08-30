@@ -15,7 +15,9 @@ const gradeToQ: Record<Grade, number> = {
 };
 
 export function sm2(state: ReviewState, grade: Grade, now = Date.now()): ReviewState {
-  let { ef = 2.5, reps = 0, intervalDays = 0, lapses = 0, phase, stepIndex = 0 } = state;
+  let { ef = 2.5, reps = 0, intervalDays = 0, lapses = 0 } = state;
+  let { stepIndex = 0 } = state;
+  const { phase } = state;
   const q = gradeToQ[grade];
 
   // Update ease factor (SM-2 style)

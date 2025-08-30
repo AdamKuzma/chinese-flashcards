@@ -173,7 +173,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
                 : deck
             );
           }
-          return updates as any;
+          return updates;
         });
       },
 
@@ -462,26 +462,15 @@ export const useFlashcardStore = create<FlashcardStore>()(
         URL.revokeObjectURL(url);
       },
 
-      importData: (data) => {
-        const { cards: newCards, decks: newDecks } = data;
-        
-        // Validate the data
-        if (!Array.isArray(newCards) || !Array.isArray(newDecks)) {
-          throw new Error('Invalid data format');
+      importData: (data: { cards: Card[]; decks: Deck[] }) => {
+        try {
+          set({
+            cards: data.cards,
+            decks: data.decks,
+          });
+        } catch (error) {
+          console.error('Error importing data:', error);
         }
-
-        // Update the store with new data
-        set({
-          cards: newCards,
-          decks: newDecks,
-          isShowingAnswer: false,
-          isReviewing: false,
-          sessionActive: false,
-          selectedDeckId: undefined,
-          reviewAll: false,
-          sessionQueue: [],
-          currentId: undefined,
-        });
       },
     }),
     {
