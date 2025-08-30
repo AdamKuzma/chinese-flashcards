@@ -131,8 +131,8 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
                   >
                     <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl flex items-center justify-center relative overflow-hidden">
                       <span className="text-2xl text-light-custom font-medium">{num}</span>
-                      <div className="absolute left-0 right-0 bottom-0 h-3 bg-white/10">
-                        <div className="h-full bg-white/70" style={{ width: pct + '%' }} />
+                      <div className="absolute left-5 right-5 bottom-5 h-3 bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-progress-custom rounded-full" style={{ width: pct + '%' }} />
                       </div>
                     </div>
                     <div className="mt-3 text-silver-custom text-xs">Lesson {num} ({pct}%)</div>
@@ -159,9 +159,11 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
         onClose={() => setShowEditDeck(false)}
         initialName={deck.name}
         initialDescription={deck.description}
-        onSave={({ name, description }) => {
-          useFlashcardStore.getState().updateDeck(deckId, { name, description });
+        initialImage={(deck as any).image}
+        onSave={({ name, description, image }) => {
+          useFlashcardStore.getState().updateDeck(deckId, { name, description, image });
           setShowEditDeck(false);
+          onToast('Deck saved');
         }}
       />
     </div>

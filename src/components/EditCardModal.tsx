@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Modal } from './Modal';
-import Button from './Button';
 
 interface EditCardModalProps {
   isOpen: boolean;
@@ -43,7 +42,16 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit card" maxWidthClassName="max-w-md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit card"
+      maxWidthClassName="max-w-md"
+      actions={[
+        { label: 'Cancel', variant: 'cancel', size: 'md', onClick: onClose },
+        { label: 'Save', size: 'md', onClick: handleSave }
+      ]}
+    >
       <div className="space-y-4">
         <div>
           <label className="block text-xs text-silver-custom mb-1 text-left">Front</label>
@@ -75,11 +83,6 @@ export const EditCardModal: React.FC<EditCardModalProps> = ({
           />
           {errors.english && <p className="text-red-400 text-xs mt-1 text-left">{errors.english}</p>}
         </div>
-      </div>
-
-      <div className="border-t border-granite-custom mt-6 pt-4 flex justify-end gap-3">
-        <Button onClick={onClose} variant="cancel" size="md">Cancel</Button>
-        <Button onClick={handleSave} size="md">Save</Button>
       </div>
     </Modal>
   );

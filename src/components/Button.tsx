@@ -26,7 +26,7 @@ const Button: React.FC<ButtonProps> = ({
   const variantClasses = {
     primary: 'btn-add bg-granite-custom text-light-custom hover:bg-granite-custom hover:opacity-90',
     secondary: 'bg-granite-custom text-light-custom hover:bg-granite-custom hover:opacity-90',
-    cancel: 'btn-cancel text-light-custom hover:text-silver-custom'
+    cancel: 'btn-cancel text-silver-custom hover:text-gray-custom'
   };
   
   const sizeClasses = {

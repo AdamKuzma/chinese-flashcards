@@ -21,6 +21,7 @@
   --color-granite: #333333;
   --color-semidark: #282828;
   --color-dark: #222222;
+  --color-progress: #F5B206;
 }
 
 a {
@@ -84,12 +85,20 @@ button {
   background-color: var(--color-granite) !important;
 }
 
+.bg-gray-custom {
+  background-color: var(--color-gray) !important;
+}
+
 .bg-dark-custom {
   background-color: var(--color-dark) !important;
 }
 
 .bg-semidark-custom {
   background-color: var(--color-semidark) !important;
+}
+
+.bg-progress-custom {
+  background-color: var(--color-progress) !important;
 }
 
 .input-custom {

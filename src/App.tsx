@@ -307,7 +307,11 @@ function App() {
                         handleTabChange('deck-detail');
                       }}
                     >
-                      <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl rotate-[2deg] hover:rotate-[4deg] hover:bg-granite-custom/80 transition-transform transition-colors" />
+                      <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl rotate-[2deg] hover:rotate-[4deg] hover:bg-granite-custom/80 transition-transform transition-colors overflow-hidden flex items-center justify-center">
+                        {deck.image ? (
+                          <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
+                        ) : null}
+                      </div>
                       <div className="mt-6 text-light-custom text-sm truncate w-[164px] text-center">{deck.name}</div>
                     </button>
                   ))}
@@ -618,11 +622,13 @@ function App() {
       <CreateDeckModal
         isOpen={showCreateDeck}
         onClose={() => setShowCreateDeck(false)}
-        onCreate={({ name, description }) => {
-          const id = useFlashcardStore.getState().addDeck({ name, description });
+        onCreate={({ name, description, image }) => {
+          const id = useFlashcardStore.getState().addDeck({ name, description, image });
           useFlashcardStore.getState().setSelectedDeckId(id);
           setShowCreateDeck(false);
           handleTabChange('deck-detail');
+          setToastMessage('Deck created');
+          setShowToast(true);
         }}
       />
 

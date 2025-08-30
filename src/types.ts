@@ -62,6 +62,7 @@ export interface Deck {
   id: string;
   name: string;
   description?: string;
+  image?: string; // data URL for deck image preview
   cardIds: string[]; // Store card IDs instead of full Card objects
   createdAt: number;
   updatedAt: number;
