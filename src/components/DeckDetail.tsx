@@ -235,13 +235,44 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
       <ImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
-        onImport={() => {
+        onImport={(data) => {
           try {
-            // Handle deck-specific import logic here
-            onToast('Import functionality coming soon');
+            // Handle deck-specific import logic
+            const { addCard, addCardToDeck } = useFlashcardStore.getState();
+            
+            if ('cards' in data && Array.isArray(data.cards)) {
+              let importedCount = 0;
+              
+              data.cards.forEach((cardData) => {
+                try {
+                  // Create new card with proper structure
+                  const newCardId = addCard({
+                    hanzi: cardData.hanzi,
+                    pinyin: cardData.pinyin || '',
+                    english: cardData.english,
+                  });
+                  
+                  // Add card to current deck
+                  addCardToDeck(deckId, newCardId);
+                  importedCount++;
+                } catch (error) {
+                  console.error('Failed to import card:', cardData, error);
+                }
+              });
+              
+              if (importedCount > 0) {
+                onToast(`Successfully imported ${importedCount} card${importedCount !== 1 ? 's' : ''}`);
+              } else {
+                onToast('No cards were imported');
+              }
+            } else {
+              onToast('Invalid import format. Please select a valid deck export file.');
+            }
+            
             setShowImportModal(false);
-          } catch {
-            onToast('Import failed');
+          } catch (error) {
+            console.error('Import failed:', error);
+            onToast('Import failed. Please check the file format.');
           }
         }}
       />

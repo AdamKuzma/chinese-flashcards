@@ -1,6 +1,6 @@
 import React from 'react';
 import DecksIcon from '../assets/Decks.svg';
-import LibraryIcon from '../assets/Library.svg';
+import LibraryIcon from '../assets/library.svg';
 import StatsIcon from '../assets/Stats.svg';
 import ProfileIcon from '../assets/Profile.svg';
 

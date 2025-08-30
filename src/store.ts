@@ -22,7 +22,7 @@ interface FlashcardStore {
 
   // Actions
   // Card management
-  addCard: (card: Omit<Card, 'id' | 'createdAt' | 'updatedAt' | 'ef' | 'intervalDays' | 'reps' | 'lapses' | 'due' | 'phase' | 'stepIndex' | 'suspended'>) => void;
+  addCard: (card: Omit<Card, 'id' | 'createdAt' | 'updatedAt' | 'ef' | 'intervalDays' | 'reps' | 'lapses' | 'due' | 'phase' | 'stepIndex' | 'suspended'>) => string;
   updateCard: (id: string, updates: Partial<Card>) => void;
   deleteCard: (id: string) => void;
   getCard: (id: string) => Card | undefined;
@@ -139,10 +139,11 @@ export const useFlashcardStore = create<FlashcardStore>()(
       addCard: (cardData) => {
         const now = Date.now();
         const fsrsState = initializeFsrsForNewCard(now);
+        const cardId = crypto.randomUUID();
         
         const newCard: Card = {
           ...cardData,
-          id: crypto.randomUUID(),
+          id: cardId,
           ef: fsrsState.ef,
           intervalDays: fsrsState.intervalDays,
           reps: fsrsState.reps,
@@ -175,6 +176,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
           }
           return updates;
         });
+        
+        return cardId;
       },
 
       updateCard: (id, updates) => {

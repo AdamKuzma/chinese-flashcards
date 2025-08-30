@@ -225,10 +225,39 @@ function App() {
   //   }
   // };
 
-  const handleImport = (data: { cards: Card[]; decks: Deck[] }) => {
+  const handleImport = (data: { cards: Card[]; decks: Deck[] } | { cards: Card[]; deck: Deck }) => {
     try {
-      importData(data);
-      showToastMessage('Data imported successfully');
+      if ('decks' in data) {
+        // Global import
+        importData(data);
+        showToastMessage('Data imported successfully');
+      } else if ('deck' in data) {
+        // Deck-specific import - add cards to existing deck
+        const { addCard, addCardToDeck } = useFlashcardStore.getState();
+        let importedCount = 0;
+        
+        data.cards.forEach((cardData) => {
+          try {
+            const newCardId = addCard({
+              hanzi: cardData.hanzi,
+              pinyin: cardData.pinyin || '',
+              english: cardData.english,
+            });
+            
+            // Add to the deck that was imported
+            addCardToDeck(data.deck.id, newCardId);
+            importedCount++;
+          } catch (error) {
+            console.error('Failed to import card:', cardData, error);
+          }
+        });
+        
+        if (importedCount > 0) {
+          showToastMessage(`Successfully imported ${importedCount} card${importedCount !== 1 ? 's' : ''} from deck "${data.deck.name}"`);
+        } else {
+          showToastMessage('No cards were imported');
+        }
+      }
     } catch {
       showToastMessage('Import failed');
     }

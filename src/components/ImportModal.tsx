@@ -6,7 +6,7 @@ import type { Card, Deck } from '../types';
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (data: { cards: Card[]; decks: Deck[] }) => void;
+  onImport: (data: { cards: Card[]; decks: Deck[] } | { cards: Card[]; deck: Deck }) => void;
 }
 
 export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport }) => {
