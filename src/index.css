@@ -175,6 +175,17 @@ button {
   transform: translateX(-50%) translateY(10px);
 }
 
+/* 3D flip helpers */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

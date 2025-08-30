@@ -30,9 +30,13 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
   }
 
   const deckCards = cards.filter((c) => deck.cardIds.includes(c.id));
+  const now = Date.now();
+  const newCount = deckCards.filter((c) => ((c as any).fsrsState === 'New') || (!('fsrsState' in c) && c.reps === 0)).length;
+  const dueCount = deckCards.filter((c) => c.due <= now && !c.suspended && ((c as any).fsrsState !== 'New' && ('fsrsState' in c || c.reps > 0))).length;
+  const learnedCount = deckCards.filter((c) => (((c as any).fsrsState === 'Review' || (c as any).fsrsState === 'Relearning') && c.due > now)).length;
 
   return (
-    <div className="space-y-6 mt-[-4px] relative">
+    <div className="mt-[-4px] relative h-full min-h-0 flex flex-col">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-6">
           <div className="w-[112px] h-[134px] bg-granite-custom rounded-xl overflow-hidden flex-shrink-0">
@@ -42,9 +46,13 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
           </div>
           <div>
             <h1 className="text-left">{deck.name}</h1>
-            {deck.description && (
-              <div className="text-sm text-left text-silver-custom mt-2">{deck.description}</div>
-            )}
+            <div className="text-sm text-left text-silver-custom mt-2 flex items-center gap-3">
+              <span>New: {newCount}</span>
+              <span className="text-gray-custom">|</span>
+              <span>Due: {dueCount}</span>
+              <span className="text-gray-custom">|</span>
+              <span>Learned: {learnedCount}</span>
+            </div>
           </div>
         </div>
         <div className="flex gap-3 items-center">
@@ -88,60 +96,63 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
         </nav>
       </div>
 
-      {/* Tab content */}
-      {activeTab === 'cards' ? (
-        <CardsGrid deckId={deckId} onToast={onToast} />
-      ) : (
-        (() => {
-          const lessonSize = 10;
-          // Build lessons by chunking to avoid rounding issues
-          const lessons: { num: number }[] = [];
-          for (let i = 0; i < deckCards.length; i += lessonSize) {
-            lessons.push({ num: Math.floor(i / lessonSize) + 1 });
-          }
-          if (lessons.length === 0) {
+      <div className="flex-1 pb-8 min-h-0 overflow-y-auto -mr-8 pr-8">
+        {/* Tab content */}
+        {activeTab === 'cards' ? (
+          <CardsGrid deckId={deckId} onToast={onToast} onOpenAddCard={() => setShowAddCard(true)} />
+        ) : (
+          (() => {
+            const lessonSize = 10;
+            // Build lessons by chunking to avoid rounding issues
+            const lessons: { num: number }[] = [];
+            for (let i = 0; i < deckCards.length; i += lessonSize) {
+              lessons.push({ num: Math.floor(i / lessonSize) + 1 });
+            }
+            if (lessons.length === 0) {
+              return (
+                <div className="py-8">
+                  <p className="text-gray-custom mb-4">No cards in this deck yet. Add your first card.</p>
+                  <Button onClick={() => setShowAddCard(true)} size="sm">Add cards</Button>
+                </div>
+              );
+            }
             return (
-              <div className="py-8">
-                <p className="text-gray-custom mb-4">No cards in this deck yet. Add your first card.</p>
-                <Button onClick={() => setShowAddCard(true)} size="sm">Add cards</Button>
+              <div className="mt-8 grid grid-cols-4 gap-4">
+                {lessons.map(({ num }) => {
+                  const start = (num - 1) * lessonSize;
+                  const end = start + lessonSize;
+                  const slice = deckCards.slice(start, end);
+                  const now = Date.now();
+                  const learned = slice.filter((c) => ((c as any).fsrsState === 'Review' || (c as any).fsrsState === 'Relearning') && c.due > now).length;
+                  const total = slice.length || 1;
+                  const pct = Math.max(0, Math.min(100, Math.round((learned / total) * 100)));
+
+                  return (
+                    <div key={num} className="relative">
+                      <button
+                        className="w-[164px] h-[196px]"
+                        onClick={() => {
+                          const ids = slice.map((c) => c.id);
+                          useFlashcardStore.getState().startReviewWithCardIds(ids);
+                          const evt = new CustomEvent('navigate-review');
+                          window.dispatchEvent(evt);
+                        }}
+                      >
+                        <div className="w-full h-full bg-granite-custom rounded-2xl flex items-center justify-center relative overflow-hidden">
+                          <span className="text-2xl text-light-custom font-medium">{num}</span>
+                          <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-progress-custom rounded-full" style={{ width: pct + '%' }} />
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             );
-          }
-          return (
-            <div className="mt-8 grid grid-cols-4 gap-6">
-              {lessons.map(({ num }) => {
-                const start = (num - 1) * lessonSize;
-                const end = start + lessonSize;
-                const slice = deckCards.slice(start, end);
-                const now = Date.now();
-                const learned = slice.filter((c) => ((c as any).fsrsState === 'Review' || (c as any).fsrsState === 'Relearning') && c.due > now).length;
-                const total = slice.length || 1;
-                const pct = Math.max(0, Math.min(100, Math.round((learned / total) * 100)));
-
-                return (
-                  <button
-                    key={num}
-                    className="text-center"
-                    onClick={() => {
-                      const ids = slice.map((c) => c.id);
-                      useFlashcardStore.getState().startReviewWithCardIds(ids);
-                      const evt = new CustomEvent('navigate-review');
-                      window.dispatchEvent(evt);
-                    }}
-                  >
-                    <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl flex items-center justify-center relative overflow-hidden">
-                      <span className="text-2xl text-light-custom font-medium">{num}</span>
-                      <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-progress-custom rounded-full" style={{ width: pct + '%' }} />
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          );
-        })()
-      )}
+          })()
+        )}
+      </div>
 
       <AddCardModal
         isOpen={showAddCard}
@@ -169,7 +180,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
   );
 };
 
-const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({ deckId, onToast }) => {
+const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpenAddCard: () => void }> = ({ deckId, onToast, onOpenAddCard }) => {
   const { getDeck, cards } = useFlashcardStore();
   const deck = getDeck(deckId);
   const [flipped, setFlipped] = useState<Set<string>>(new Set());
@@ -186,6 +197,7 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({
     return (
       <div className="flex flex-col items-center justify-center h-full py-8">
         <p className="text-gray-custom mb-4">No cards in this deck yet. Add your first card.</p>
+        <Button onClick={onOpenAddCard} size="sm">Add cards</Button>
       </div>
     );
   }
@@ -210,19 +222,32 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({
   };
 
   return (
-    <div className="mt-8 grid grid-cols-4 gap-6">
+    <div className="mt-8 grid grid-cols-4 gap-4">
       {deckCards.map((card) => {
         const isFlipped = flipped.has(card.id);
         return (
           <div key={card.id} className="relative group">
             <button
               onClick={() => handleToggle(card.id)}
-              className="w-[164px] h-[196px] bg-granite-custom rounded-2xl flex items-center justify-center text-center px-3"
+              className="w-[164px] h-[196px]"
               title="Toggle card text"
             >
-              <span className="text-light-custom text-xl leading-snug break-words w-full">
-                {isFlipped ? card.english : card.hanzi}
-              </span>
+              <div className="w-full h-full perspective-1000">
+                <div className={`relative w-full h-full preserve-3d transition-transform duration-300 ${isFlipped ? 'rotate-y-180' : ''}`}>
+                  {/* Front of card */}
+                  <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center text-center px-3 backface-hidden">
+                    <span className="text-light-custom text-xl leading-snug break-words w-full">
+                      {card.hanzi}
+                    </span>
+                  </div>
+                  {/* Back of card */}
+                  <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center text-center px-3 backface-hidden" style={{ transform: 'rotateY(180deg)' }}>
+                    <span className="text-light-custom text-xl leading-snug break-words w-full">
+                      {card.english}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </button>
             {/* Ellipsis visible on hover */}
             <div className="absolute top-2 right-2">

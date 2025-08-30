@@ -3,6 +3,8 @@ import type { Card } from '../types.ts';
 import { ReviewQuality } from '../types.ts';
 import { getCardDebugInfo } from '../utils';
 import Button from './Button';
+import { useFlashcardStore } from '../store';
+import SoundIcon from '../assets/Sound.svg';
 
 interface FlashcardProps {
   card: Card;
@@ -24,6 +26,15 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
   const debugInfo = getCardDebugInfo(card);
+  const [displayBack, setDisplayBack] = useState(false);
+  const [enterRotationX, setEnterRotationX] = useState(0);
+  const [lastCardId, setLastCardId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [suppressYTransition, setSuppressYTransition] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Get review session state from store
+  const { isReviewing, reviewAll } = useFlashcardStore();
 
   // Cleanup audio URLs when component unmounts
   useEffect(() => {
@@ -34,6 +45,40 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       });
     };
   }, [audioCache]);
+
+  // When answer is revealed, start by showing the back; allow toggling back/forth thereafter
+  useEffect(() => {
+    if (isTransitioning || lastCardId !== card.id) return; // Don't change displayBack during transitions or when card is changing
+    if (isShowingAnswer) {
+      setDisplayBack(true);
+    } else {
+      setDisplayBack(false);
+    }
+  }, [isShowingAnswer, isTransitioning, lastCardId, card.id]);
+
+  // On card change, run an X-axis enter animation (top -> bottom flip)
+  useEffect(() => {
+    if (lastCardId !== null && lastCardId !== card.id) {
+      // INSTANTLY disable all transitions and reset card
+      setIsTransitioning(true);
+      setEnterRotationX(0);
+      setDisplayBack(false);
+      // Force immediate state update
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 0);
+    }
+    if (lastCardId !== card.id) setLastCardId(card.id);
+  }, [card.id, lastCardId]);
+
+  // Only reset displayBack when starting a completely new review session
+  useEffect(() => {
+    const currentSessionId = `${isReviewing}-${reviewAll}`;
+    if (sessionId !== currentSessionId) {
+      setSessionId(currentSessionId);
+      setDisplayBack(false);
+    }
+  }, [isReviewing, reviewAll, sessionId]);
 
   const playAudio = async () => {
     if (isPlaying) return;
@@ -100,39 +145,36 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   return (
     <div className="max-w-2xl mx-auto px-16">
       {/* Card Display */}
-      <div className="bg-granite-custom rounded-lg shadow-lg p-8 min-h-96 flex flex-col justify-center items-center text-center mb-6 relative">
-        {/* Speaker icon in bottom-right corner */}
-        <button
-          onClick={playAudio}
-          disabled={isPlaying}
-          className="absolute bottom-4 right-4 w-10 h-10 hover:bg-gray-custom disabled:opacity-50 disabled:cursor-not-allowed text-light-custom rounded-full flex items-center justify-center transition-colors"
-          title={isPlaying ? "Playing..." : "Listen to pronunciation"}
-        >
-          {isPlaying ? (
-            <span className="text-sm">⏸️</span>
-          ) : (
-            <span className="text-sm">🔊</span>
-          )}
-        </button>
-
-        {/* Hanzi (Chinese characters) */}
-        <div className="text-6xl font-medium text-light-custom mb-4">
-          {card.hanzi}
+      <div className="mb-6 perspective-1000">
+        <div className={`${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`} style={{ transform: isTransitioning ? 'none' : `rotateX(${enterRotationX}deg)` }}>
+          <div className={`relative w-[272px] h-[325px] mx-auto rounded-2xl preserve-3d ${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`}
+               style={{ transform: isTransitioning ? 'none' : (displayBack ? 'rotateY(180deg)' : 'rotateY(0deg)') }}
+               onClick={() => { if (isShowingAnswer) setDisplayBack(prev => !prev); }}>
+            {/* Front of card */}
+            <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center backface-hidden">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent card flip when clicking sound button
+                  playAudio();
+                }}
+                disabled={isPlaying}
+                className="absolute bottom-3 right-3 w-9 h-9 hover:bg-gray-custom disabled:opacity-50 disabled:cursor-not-allowed text-light-custom rounded-full flex items-center justify-center transition-colors"
+                title={isPlaying ? 'Playing...' : 'Listen to pronunciation'}
+              >
+                <img src={SoundIcon} alt="Sound" className="w-5 h-5" />
+              </button>
+              <div className="text-6xl font-medium text-light-custom text-center px-4">
+                {card.hanzi}
+              </div>
+            </div>
+            {/* Back of card */}
+            <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center backface-hidden" style={{ transform: 'rotateY(180deg)' }}>
+              <div className="text-2xl text-light-custom font-medium text-center px-4">
+                {card.english}
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Pinyin */}
-        {card.pinyin && (
-          <div className="text-lg text-light-custom mb-4">
-            {card.pinyin}
-          </div>
-        )}
-
-        {/* English translation - shown only when answer is revealed */}
-        {isShowingAnswer && (
-          <div className="text-2xl text-light-custom font-medium pt-4 mt-4">
-            {card.english}
-          </div>
-        )}
       </div>
 
       {/* Show Answer Button */}

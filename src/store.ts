@@ -14,6 +14,7 @@ interface FlashcardStore {
   sessionActive: boolean;
   sessionQueue: string[]; // card IDs
   currentId?: string;
+  sessionInitialCount: number;
   isShowingAnswer: boolean;
   isReviewing: boolean; // alias of sessionActive for UI compatibility
   selectedDeckId?: string;
@@ -127,6 +128,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       sessionActive: false,
       sessionQueue: [],
       currentId: undefined,
+      sessionInitialCount: 0,
       isShowingAnswer: false,
       isReviewing: false,
       selectedDeckId: undefined,
@@ -291,6 +293,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           sessionActive: ids.length > 0,
           sessionQueue: ids,
           currentId: ids[0],
+          sessionInitialCount: ids.length,
           isShowingAnswer: false,
           reviewAll: reviewAll,
         });
@@ -308,6 +311,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           sessionActive: ids.length > 0,
           sessionQueue: ids,
           currentId: ids[0],
+          sessionInitialCount: ids.length,
           isShowingAnswer: false,
         });
       },
@@ -319,6 +323,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           selectedDeckId: undefined,
           sessionQueue: [],
           currentId: undefined,
+          sessionInitialCount: 0,
           isShowingAnswer: false,
           reviewAll: false,
         });

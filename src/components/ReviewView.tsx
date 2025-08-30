@@ -14,6 +14,7 @@ export const ReviewView: React.FC = () => {
     previousCard,
     getDueCards,
     getAllCards,
+    sessionInitialCount,
   } = useFlashcardStore();
 
   const currentCard = getCurrentCard();
@@ -52,8 +53,13 @@ export const ReviewView: React.FC = () => {
     <>
       <div className="flex justify-between items-center mb-8">
         <h1>Review</h1>
+        <div className="flex-1 px-6">
+          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+            <div className="h-full bg-progress-custom rounded-full" style={{ width: `${Math.max(0, Math.min(100, Math.round((((sessionInitialCount - (total - (index + 1))) / Math.max(1, sessionInitialCount)) * 100))))}%` }} />
+          </div>
+        </div>
         <div className="text-gray-custom text-sm">
-          {reviewAll ? 'All cards' : 'Due cards'} - {index + 1} of {total}
+          {index + 1} of {total}
         </div>
       </div>
 

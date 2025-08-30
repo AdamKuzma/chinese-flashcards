@@ -9,7 +9,6 @@ interface AddCardModalProps {
 
 export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onAdd }) => {
   const [hanzi, setHanzi] = useState('');
-  const [pinyin, setPinyin] = useState('');
   const [english, setEnglish] = useState('');
   const [errors, setErrors] = useState<{ hanzi?: string; english?: string }>({});
 
@@ -20,10 +19,9 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    onAdd({ hanzi: hanzi.trim(), pinyin: pinyin.trim() || undefined, english: english.trim() });
+    onAdd({ hanzi: hanzi.trim(), english: english.trim() });
     // Keep modal open; clear form for next add
     setHanzi('');
-    setPinyin('');
     setEnglish('');
   };
 
@@ -32,48 +30,46 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
       isOpen={isOpen}
       onClose={onClose}
       title="Add card"
-      maxWidthClassName="max-w-md"
+      maxWidthClassName="max-w-xl"
       actions={[
         { label: 'Cancel', variant: 'cancel', size: 'md', onClick: onClose },
         { label: 'Add', size: 'md', onClick: handleAdd }
       ]}
     >
-      <div className="space-y-4">
-        <div>
-          <label className="block text-xs text-silver-custom mb-1 text-left">Front</label>
-          <input
-            value={hanzi}
-            onChange={(e) => {
-              setHanzi(e.target.value);
-              if (errors.hanzi) setErrors((prev) => ({ ...prev, hanzi: undefined }));
-            }}
-            className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none ${errors.hanzi ? 'ring-1 ring-red-500' : ''}`}
-            placeholder="你好"
-            autoFocus
-          />
-          {errors.hanzi && <p className="text-red-400 text-xs mt-1 text-left">{errors.hanzi}</p>}
+      <div className="flex justify-center py-6 gap-6">
+        {/* Front field */}
+        <div className="flex flex-col items-center">
+          <label className="block text-xs text-silver-custom mb-2 text-center w-full">Front</label>
+          <div className={`w-[206px] h-[246px] bg-granite-custom rounded-2xl flex items-center justify-center ${errors.hanzi ? 'ring-1 ring-red-500' : ''}`}>
+            <input
+              value={hanzi}
+              onChange={(e) => {
+                setHanzi(e.target.value);
+                if (errors.hanzi) setErrors((prev) => ({ ...prev, hanzi: undefined }));
+              }}
+              className="bg-transparent text-xl text-light-custom placeholder:text-gray-custom text-center w-[90%] focus:outline-none"
+              placeholder="你好"
+              autoFocus
+            />
+          </div>
+          {errors.hanzi && <p className="text-red-400 text-xs mt-2 text-center w-full">{errors.hanzi}</p>}
         </div>
-        <div>
-          <label className="block text-xs text-silver-custom mb-1 text-left">Pinyin (optional)</label>
-          <input
-            value={pinyin}
-            onChange={(e) => setPinyin(e.target.value)}
-            className="input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none"
-            placeholder="nǐ hǎo"
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-silver-custom mb-1 text-left">Back</label>
-          <input
-            value={english}
-            onChange={(e) => {
-              setEnglish(e.target.value);
-              if (errors.english) setErrors((prev) => ({ ...prev, english: undefined }));
-            }}
-            className={`input-custom focus-ring-gray-custom w-full px-3 py-2 bg-granite-custom rounded-lg focus:outline-none ${errors.english ? 'ring-1 ring-red-500' : ''}`}
-            placeholder="hello"
-          />
-          {errors.english && <p className="text-red-400 text-xs mt-1 text-left">{errors.english}</p>}
+
+        {/* Back field */}
+        <div className="flex flex-col items-center">
+          <label className="block text-xs text-silver-custom mb-2 text-center w-full">Back</label>
+          <div className={`w-[206px] h-[246px] bg-granite-custom rounded-2xl flex items-center justify-center ${errors.english ? 'ring-1 ring-red-500' : ''}`}>
+            <input
+              value={english}
+              onChange={(e) => {
+                setEnglish(e.target.value);
+                if (errors.english) setErrors((prev) => ({ ...prev, english: undefined }));
+              }}
+              className="bg-transparent text-xl text-light-custom placeholder:text-gray-custom text-center w-[90%] focus:outline-none"
+              placeholder="hello"
+            />
+          </div>
+          {errors.english && <p className="text-red-400 text-xs mt-2 text-center w-full">{errors.english}</p>}
         </div>
       </div>
     </Modal>
