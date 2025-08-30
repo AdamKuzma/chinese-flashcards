@@ -21,6 +21,12 @@
   --color-granite: #333333;
   --color-semidark: #282828;
   --color-dark: #222222;
+  /* RGB versions for opacity-aware Tailwind usage */
+  --color-light-rgb: 238 238 238;
+  --color-silver-rgb: 187 187 187;
+  --color-gray-rgb: 136 136 136;
+  --color-granite-rgb: 51 51 51;
+  --color-dark-rgb: 34 34 34;
   --color-progress: #F5B206;
 }
 

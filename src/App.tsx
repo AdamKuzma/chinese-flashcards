@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Flashcard, Toast, HelpModal, Button, EllipsisMenu, ImportModal, CreateDeckModal, DeckDetail } from './components';
+import { Toast, HelpModal, Button, EllipsisMenu, ImportModal, CreateDeckModal, DeckDetail, ReviewView, Nav } from './components';
 import { dbOperations } from './database.ts';
-import { ReviewQuality } from './types.ts';
+// import { ReviewQuality } from './types.ts';
 import { formatTimeUntilDue } from './utils';
-import DecksIcon from './assets/Decks.svg';
-import LibraryIcon from './assets/Library.svg';
-import StatsIcon from './assets/Stats.svg';
-import ProfileIcon from './assets/Profile.svg';
+// Icons are used inside Nav component
 import PlusIcon from './assets/Plus.svg';
 import './App.css';
 
@@ -16,17 +13,17 @@ function App() {
     cards,
     decks,
     // removed currentCardIndex for queue model
-    isShowingAnswer,
-    isReviewing,
+    // isShowingAnswer,
+    // isReviewing,
     selectedDeckId,
-    reviewAll,
+    // reviewAll,
     startReview,
-    showAnswer,
-    reviewCard,
-    getDueCards,
+    // showAnswer,
+    // reviewCard,
+    // getDueCards,
     getAllCards,
-    nextCard,
-    previousCard,
+    // nextCard,
+    // previousCard,
     addCard,
     deleteCard,
     updateCard,
@@ -34,8 +31,8 @@ function App() {
     exportData,
     importData,
     // new helpers
-    getCurrentCard,
-    getSessionPosition,
+    // getCurrentCard,
+    // getSessionPosition,
     setSelectedDeckId,
   } = useFlashcardStore();
 
@@ -74,7 +71,9 @@ function App() {
 
     initializeData();
     const toReview = () => handleTabChange('review');
+    const toDeckDetail = () => handleTabChange('deck-detail');
     window.addEventListener('navigate-review', toReview as EventListener);
+    window.addEventListener('navigate-deck-detail', toDeckDetail as EventListener);
     
     // Restore deck detail view if a deck was previously selected
     const savedTab = localStorage.getItem('activeTab');
@@ -82,14 +81,14 @@ function App() {
     if (savedTab === 'deck-detail' && savedDeckId) {
       setActiveTab('deck-detail');
     }
-    return () => window.removeEventListener('navigate-review', toReview as EventListener);
+    return () => {
+      window.removeEventListener('navigate-review', toReview as EventListener);
+      window.removeEventListener('navigate-deck-detail', toDeckDetail as EventListener);
+    };
   }, []);
 
-  const dueCards = selectedDeckId ? getDueCards(selectedDeckId) : getDueCards();
   const allCards = selectedDeckId ? getAllCards(selectedDeckId) : getAllCards();
-  const cardsToReview = reviewAll ? allCards : dueCards;
-  const currentCard = getCurrentCard();
-  const { index: sessionIndex, total: sessionTotal } = getSessionPosition();
+  // Derived session values are handled inside ReviewView now
 
   // Validation functions
   const checkForDuplicateCard = (field: 'hanzi' | 'english', value: string) => {
@@ -164,13 +163,14 @@ function App() {
     showToastMessage('Card added');
   };
 
-  const handleStartReview = (reviewAllCards = false) => {
-    const cardsAvailable = reviewAllCards ? allCards.length > 0 : dueCards.length > 0;
-    if (cardsAvailable) {
-      startReview(undefined, reviewAllCards);
-      handleTabChange('review');
-    }
-  };
+  // kept for add-card empty state actions
+  // const handleStartReview = (reviewAllCards = false) => {
+  //   const cardsAvailable = reviewAllCards ? allCards.length > 0 : dueCards.length > 0;
+  //   if (cardsAvailable) {
+  //     startReview(undefined, reviewAllCards);
+  //     handleTabChange('review');
+  //   }
+  // };
 
   const showToastMessage = (message: string) => {
     setToastMessage(message);
@@ -219,11 +219,11 @@ function App() {
     }
   };
 
-  const handleReview = (quality: ReviewQuality) => {
-    if (currentCard) {
-      reviewCard(quality);
-    }
-  };
+  // const handleReview = (quality: ReviewQuality) => {
+  //   if (currentCard) {
+  //     reviewCard(quality);
+  //   }
+  // };
 
   const handleExport = () => {
     try {
@@ -246,40 +246,7 @@ function App() {
   return (
     <div className="h-screen overflow-hidden">
       <div className="w-[780px] mx-auto h-screen border-l border-r border-granite-custom flex flex-col relative">
-        {/* Left-side vertical icon navigation (outside main container) */}
-        <div className="absolute left-0 top-1 -translate-x-full transform z-40 flex flex-col items-center">
-          <button
-            onClick={() => handleTabChange('dashboard')}
-            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
-            title="Decks"
-            aria-label="Decks"
-          >
-            <img src={DecksIcon} alt="Decks" className="w-7 h-7" />
-          </button>
-          <button
-            onClick={() => handleTabChange('browse')}
-            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
-            title="Library"
-            aria-label="Library"
-          >
-            <img src={LibraryIcon} alt="Library" className="w-7 h-7" />
-          </button>
-          <button
-            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
-            title="Stats"
-            aria-label="Stats"
-          >
-            <img src={StatsIcon} alt="Stats" className="w-7 h-7" />
-          </button>
-          <button
-            className="w-16 h-15 rounded-full hover:bg-granite-custom flex items-center justify-center"
-            title="Profile"
-            aria-label="Profile"
-          >
-            <img src={ProfileIcon} alt="Profile" className="w-5.5 h-5.5" />
-          </button>
-        </div>
-      {/* Main Content */}
+        <Nav onNavigate={handleTabChange} />
 
       <main className="px-8 pt-8 flex-1">
         <div className="w-full">
@@ -298,19 +265,22 @@ function App() {
                 </div>
               ) : (
                 <div className="mt-6 grid grid-cols-3 place-items-center gap-6">
-                  {decks.map((deck) => (
+                  {decks.map((deck, idx) => (
                     <button
                       key={deck.id}
-                      className="text-left"
+                      className="text-left group"
                       onClick={() => {
                         setSelectedDeckId(deck.id);
                         handleTabChange('deck-detail');
                       }}
                     >
-                      <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl rotate-[2deg] hover:rotate-[4deg] hover:bg-granite-custom/80 transition-transform transition-colors overflow-hidden flex items-center justify-center">
-                        {deck.image ? (
-                          <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
-                        ) : null}
+                      <div className="relative w-[164px] h-[196px]">
+                        <div className={`absolute inset-0 bg-granite-custom rounded-2xl -z-10 transition-transform ${idx % 2 === 0 ? 'rotate-[2deg] group-hover:rotate-[4deg]' : 'rotate-[-2deg] group-hover:rotate-[-4deg]'}`} />
+                        <div className={`relative w-full h-full bg-granite-custom rounded-2xl transition-transform transition-colors overflow-hidden flex items-center justify-center ${idx % 2 === 0 ? 'rotate-[-4deg] group-hover:rotate-[-6deg]' : 'rotate-[4deg] group-hover:rotate-[6deg]'} group-hover:scale-102 group-hover:bg-granite-custom/80`}>
+                          {deck.image ? (
+                            <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
+                          ) : null}
+                        </div>
                       </div>
                       <div className="mt-6 text-light-custom text-sm truncate w-[164px] text-center">{deck.name}</div>
                     </button>
@@ -351,60 +321,7 @@ function App() {
           {activeTab === 'review' && (
             <div className="h-[calc(100vh-140px)] overflow-y-auto">
               <div className="space-y-6">
-            {isReviewing && cardsToReview.length > 0 && currentCard ? (
-              <>
-                <div className="flex justify-between items-center mb-8">
-                  <h1>Review</h1>
-                  <div className="text-gray-custom text-sm">
-                    {reviewAll ? 'All cards' : 'Due cards'} - {sessionIndex + 1} of {sessionTotal}
-                  </div>
-                </div>
-
-                <Flashcard
-                  card={currentCard}
-                  isShowingAnswer={isShowingAnswer}
-                  onShowAnswer={showAnswer}
-                  onReview={handleReview}
-                  onNext={nextCard}
-                  onPrevious={previousCard}
-                  showNavigation={sessionTotal > 1}
-                />
-
-
-              </>
-            ) : (
-              <div className="text-center py-12">
-                {dueCards.length > 0 ? (
-                  <>
-                    <img src="/assets/coffee.png" alt="Coffee" className="w-24 h-24 mx-auto mb-4" />
-                    <h3 className="text-xl text-light-custom mb-2">Ready to review!</h3>
-                    <p className="text-sm text-silver-custom mb-12">You have {dueCards.length} card{dueCards.length !== 1 ? 's' : ''} due for review.</p>
-                    <Button
-                      onClick={() => handleStartReview(false)}
-                      size="sm"
-                    >
-                      Start Review
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <img src="/assets/cat.png" alt="Cat" className="w-24 h-24 mx-auto mb-4" />
-                    <h3 className="text-xl text-light-custom mb-2">No cards due</h3>
-                    <p className="text-sm text-silver-custom mb-12">All caught up! Check back later for more reviews.</p>
-                    <div className="flex justify-center gap-4">
-                      {allCards.length > 0 && (
-                        <Button
-                          onClick={() => handleStartReview(true)}
-                          size="sm"
-                        >
-                          Review Cards
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
+                <ReviewView />
               </div>
             </div>
           )}
@@ -412,7 +329,7 @@ function App() {
           {activeTab === 'browse' && (
             <>
               <div className="flex justify-between items-center mb-8">
-                <h1 className="text-left">Browse</h1>
+                <h1 className="text-left">Library</h1>
                 <div className="text-gray-custom">
                   {allCards.length} total cards
                 </div>

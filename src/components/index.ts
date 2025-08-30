@@ -10,3 +10,5 @@ export { Modal } from './Modal';
 export { AddCardModal } from './AddCardModal';
 export { EditDeckModal } from './EditDeckModal';
 export { EditCardModal } from './EditCardModal';
+export { ReviewView } from './ReviewView';
+export { Nav } from './Nav';

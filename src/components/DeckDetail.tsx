@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFlashcardStore } from '../store';
 import Button from './Button';
 import { AddCardModal } from './AddCardModal';
 import { EditDeckModal } from './EditDeckModal';
 import { EditCardModal } from './EditCardModal';
+import { PopoverMenu } from './PopoverMenu';
 
 interface DeckDetailProps {
   deckId: string;
@@ -16,21 +17,13 @@ interface DeckDetailProps {
 export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _onStartReview, onAddCard: _onAddCard, onDeleteDeck, onToast }) => {
   const { getDeck, cards } = useFlashcardStore();
   const deck = getDeck(deckId);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  // deprecated with PopoverMenu, retained if needed elsewhere
   const [activeTab, setActiveTab] = useState<'lessons' | 'cards'>('lessons');
   const [showAddCard, setShowAddCard] = useState(false);
   const [showEditDeck, setShowEditDeck] = useState(false);
 
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, []);
+  // No-op
+  useEffect(() => {}, []);
 
   if (!deck) {
     return <div className="text-gray-custom">Deck not found.</div>;
@@ -39,48 +32,55 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
   const deckCards = cards.filter((c) => deck.cardIds.includes(c.id));
 
   return (
-    <div className="space-y-6 relative">
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h1 className="text-left">{deck.name}</h1>
-          {deck.description && (
-            <div className="text-xs text-silver-custom mt-1">{deck.description}</div>
-          )}
-        </div>
-        <div className="flex gap-3 items-center">
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="w-8 h-8 rounded-full hover:bg-granite-custom flex items-center justify-center"
-              aria-label="Deck options"
-              title="Deck options"
-            >
-              <span className="text-lg">⋯</span>
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 bg-granite-custom rounded-lg shadow-lg border border-gray-600 z-50 min-w-36">
-                <div className="py-1">
-                  <button onClick={() => setShowAddCard(true)} className="w-full px-4 py-2 text-left text-light-custom hover:bg-gray-600 transition-colors">Add cards</button>
-                  <button onClick={() => setShowEditDeck(true)} className="w-full px-4 py-2 text-left text-light-custom hover:bg-gray-600 transition-colors">Edit deck</button>
-                  <button onClick={() => { onDeleteDeck(); setMenuOpen(false); }} className="w-full px-4 py-2 text-left text-red-300 hover:bg-gray-600 transition-colors">Delete deck</button>
-                </div>
-              </div>
+    <div className="space-y-6 mt-[-4px] relative">
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-6">
+          <div className="w-[112px] h-[134px] bg-granite-custom rounded-xl overflow-hidden flex-shrink-0">
+            {deck.image && (
+              <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
             )}
           </div>
+          <div>
+            <h1 className="text-left">{deck.name}</h1>
+            {deck.description && (
+              <div className="text-sm text-left text-silver-custom mt-2">{deck.description}</div>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-3 items-center">
+          <PopoverMenu
+            placement="bottom-right"
+            trigger={({ onClick, ref }) => (
+              <button
+                onClick={onClick}
+                ref={ref as any}
+                className="w-8 h-8 rounded-full hover:bg-granite-custom flex items-center justify-center"
+                aria-label="Deck options"
+                title="Deck options"
+              >
+                <span className="text-lg">⋯</span>
+              </button>
+            )}
+            actions={[
+              { key: 'add', label: 'Add cards', onClick: () => setShowAddCard(true) },
+              { key: 'edit', label: 'Edit deck', onClick: () => setShowEditDeck(true) },
+              { key: 'delete', label: 'Delete deck', onClick: () => onDeleteDeck(), className: 'text-red-300' },
+            ]}
+          />
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-granite-custom">
+      <div className="border-b border-granite-custom -mx-8 px-8">
         <nav className="flex gap-6">
           <button
-            className={`py-2 ${activeTab === 'lessons' ? 'text-light-custom border-b-2 border-light-custom' : 'text-gray-custom'}`}
+            className={`py-2 w-[110px] ${activeTab === 'lessons' ? 'text-light-custom border-b-2 border-light-custom' : 'text-gray-custom'}`}
             onClick={() => setActiveTab('lessons')}
           >
             Lessons
           </button>
           <button
-            className={`py-2 ${activeTab === 'cards' ? 'text-light-custom border-b-2 border-light-custom' : 'text-gray-custom'}`}
+            className={`py-2 w-[110px] ${activeTab === 'cards' ? 'text-light-custom border-b-2 border-light-custom' : 'text-gray-custom'}`}
             onClick={() => setActiveTab('cards')}
           >
             Cards
@@ -108,7 +108,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
             );
           }
           return (
-            <div className="mt-6 grid grid-cols-4 gap-6">
+            <div className="mt-8 grid grid-cols-4 gap-6">
               {lessons.map(({ num }) => {
                 const start = (num - 1) * lessonSize;
                 const end = start + lessonSize;
@@ -131,11 +131,10 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartReview: _
                   >
                     <div className="w-[164px] h-[196px] bg-granite-custom rounded-2xl flex items-center justify-center relative overflow-hidden">
                       <span className="text-2xl text-light-custom font-medium">{num}</span>
-                      <div className="absolute left-5 right-5 bottom-5 h-3 bg-white/10 rounded-full overflow-hidden">
+                      <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
                         <div className="h-full bg-progress-custom rounded-full" style={{ width: pct + '%' }} />
                       </div>
                     </div>
-                    <div className="mt-3 text-silver-custom text-xs">Lesson {num} ({pct}%)</div>
                   </button>
                 );
               })}
@@ -174,18 +173,11 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({
   const { getDeck, cards } = useFlashcardStore();
   const deck = getDeck(deckId);
   const [flipped, setFlipped] = useState<Set<string>>(new Set());
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  // deprecated: was used for manual popover control
   const [editId, setEditId] = useState<string | null>(null);
 
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest('[data-card-menu]')) return; // clicks inside menu
-      setMenuOpenId(null);
-    };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
-  }, []);
+  // No manual menu state to clear anymore
+  useEffect(() => {}, []);
 
   if (!deck) return null;
   const deckCards = cards.filter((c) => deck.cardIds.includes(c.id));
@@ -208,7 +200,6 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({
 
   const handleRemove = (id: string) => {
     useFlashcardStore.getState().deleteCard(id);
-    setMenuOpenId(null);
     onToast('Card removed');
   };
 
@@ -219,7 +210,7 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({
   };
 
   return (
-    <div className="mt-6 grid grid-cols-4 gap-6">
+    <div className="mt-8 grid grid-cols-4 gap-6">
       {deckCards.map((card) => {
         const isFlipped = flipped.has(card.id);
         return (
@@ -229,26 +220,31 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void }> = ({
               className="w-[164px] h-[196px] bg-granite-custom rounded-2xl flex items-center justify-center text-center px-3"
               title="Toggle card text"
             >
-              <span className="text-light-custom text-sm leading-snug break-words w-full">
+              <span className="text-light-custom text-xl leading-snug break-words w-full">
                 {isFlipped ? card.english : card.hanzi}
               </span>
             </button>
             {/* Ellipsis visible on hover */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setMenuOpenId((v) => v === card.id ? null : card.id); }}
-              className="absolute top-2 right-2 w-7 h-7 rounded-full hidden group-hover:flex items-center justify-center hover:bg-gray-600 text-light-custom"
-              aria-label="Card options"
-            >
-              ⋯
-            </button>
-            {menuOpenId === card.id && (
-              <div data-card-menu className="absolute top-10 right-2 bg-granite-custom rounded-lg shadow-lg border border-gray-600 z-50 min-w-32">
-                <div className="py-1">
-                  <button onClick={() => { setEditId(card.id); setMenuOpenId(null); }} className="w-full px-4 py-2 text-left text-light-custom hover:bg-gray-600 transition-colors">Edit</button>
-                  <button onClick={() => handleRemove(card.id)} className="w-full px-4 py-2 text-left text-red-300 hover:bg-gray-600 transition-colors">Remove</button>
-                </div>
-              </div>
-            )}
+            <div className="absolute top-2 right-2">
+              <PopoverMenu
+                className="relative"
+                placement="bottom-right"
+                trigger={({ onClick, ref }) => (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onClick(); }}
+                    ref={ref as any}
+                    className="w-7 h-7 rounded-lg hidden group-hover:flex items-center justify-center hover:bg-neutral-700 text-light-custom"
+                    aria-label="Card options"
+                  >
+                    ⋯
+                  </button>
+                )}
+                actions={[
+                  { key: 'edit', label: 'Edit', onClick: () => { setEditId(card.id); } },
+                  { key: 'remove', label: 'Remove', onClick: () => handleRemove(card.id), className: 'text-red-300' },
+                ]}
+              />
+            </div>
 
             {editId === card.id && (
               <EditCardModal
