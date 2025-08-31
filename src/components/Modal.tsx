@@ -23,6 +23,7 @@ interface ModalProps {
   footer?: React.ReactNode; // Custom footer content; overrides actions if provided
   footerJustify?: 'start' | 'center' | 'end' | 'between';
   footerClassName?: string;
+  hideHeader?: boolean; // Hide the entire header section
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -35,6 +36,7 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   footerJustify = 'end',
   footerClassName,
+  hideHeader = false,
 }) => {
   const [isMounted, setIsMounted] = useState(isOpen);
   const [show, setShow] = useState(false);
@@ -69,17 +71,19 @@ export const Modal: React.FC<ModalProps> = ({
         className={`bg-dark-custom rounded-2xl shadow-lg px-6 py-4 w-full ${maxWidthClassName} mx-4 transform transition-all duration-200 ease-in-out ${show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[20px]'}`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center mb-4 border-b border-granite-custom pb-4 -mx-6 pl-6 pr-4">
-          <h2 className="text-md text-light-custom">{title}</h2>
-          <Button
-            onClick={onClose}
-            variant="cancel"
-            size="sm"
-            className="text-gray-custom hover:text-light-custom"
-          >
-            ✕
-          </Button>
-        </div>
+        {!hideHeader && (
+          <div className="flex justify-between items-center mb-4 border-b border-granite-custom pb-4 -mx-6 pl-6 pr-4">
+            <h2 className="text-md text-light-custom">{title}</h2>
+            <Button
+              onClick={onClose}
+              variant="cancel"
+              size="sm"
+              className="text-gray-custom hover:text-light-custom"
+            >
+              ✕
+            </Button>
+          </div>
+        )}
         {children}
 
         {(footer || (actions && actions.length > 0)) && (
@@ -108,5 +112,3 @@ export const Modal: React.FC<ModalProps> = ({
     </div>
   );
 };
-
-

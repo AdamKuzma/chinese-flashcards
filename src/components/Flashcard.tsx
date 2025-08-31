@@ -181,7 +181,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         <div className="flex justify-center mb-6">
           <Button
             onClick={onShowAnswer}
-            size="md"
+            size="lg"
           >
             Show Answer
           </Button>

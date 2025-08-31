@@ -72,8 +72,10 @@ function App() {
     initializeData();
     const toReview = () => handleTabChange('review');
     const toDeckDetail = () => handleTabChange('deck-detail');
+    const toDashboard = () => handleTabChange('dashboard');
     window.addEventListener('navigate-review', toReview as EventListener);
     window.addEventListener('navigate-deck-detail', toDeckDetail as EventListener);
+    window.addEventListener('navigate-dashboard', toDashboard as EventListener);
     
     // Restore deck detail view if a deck was previously selected
     const savedTab = localStorage.getItem('activeTab');
@@ -84,6 +86,7 @@ function App() {
     return () => {
       window.removeEventListener('navigate-review', toReview as EventListener);
       window.removeEventListener('navigate-deck-detail', toDeckDetail as EventListener);
+      window.removeEventListener('navigate-dashboard', toDashboard as EventListener);
     };
   }, []);
 
