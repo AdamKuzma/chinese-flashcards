@@ -60,3 +60,41 @@
   color: #EEEEEE;
   transform: scale(1.05);
 }
+
+/* Nav icon hover effects */
+.nav-icon-btn {
+  width: 64px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+}
+
+/* .nav-icon-btn:hover .nav-icon-wrapper {
+  background-color: rgba(255, 255, 255, 0.05);
+} */
+
+.nav-icon-btn:hover .nav-icon-wrapper img {
+  filter: brightness(1.5);
+  transition: filter 0.2s ease-in-out;
+}
+
+.nav-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease-in-out;
+  background-color: transparent;
+}
+
+/* Tooltip transitions */
+.nav-icon-btn .pointer-events-none {
+  transition: opacity 0.2s ease-in-out;
+  right: calc(100% - 6px);
+}

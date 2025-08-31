@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
+import { useFlashcardStore } from '../store';
 
 interface AddCardModalProps {
   isOpen: boolean;
@@ -11,11 +12,53 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
   const [hanzi, setHanzi] = useState('');
   const [english, setEnglish] = useState('');
   const [errors, setErrors] = useState<{ hanzi?: string; english?: string }>({});
+  
+  const { cards } = useFlashcardStore();
+
+  // Check for duplicates when hanzi or english changes
+  useEffect(() => {
+    const nextErrors: { hanzi?: string; english?: string } = {};
+    
+    if (hanzi.trim()) {
+      const isDuplicate = cards.some(card => 
+        card.hanzi.toLowerCase() === hanzi.trim().toLowerCase() ||
+        card.english.toLowerCase() === hanzi.trim().toLowerCase()
+      );
+      if (isDuplicate) {
+        nextErrors.hanzi = 'Card already exists';
+      }
+    }
+    
+    if (english.trim()) {
+      const isDuplicate = cards.some(card => 
+        card.hanzi.toLowerCase() === english.trim().toLowerCase() ||
+        card.english.toLowerCase() === english.trim().toLowerCase()
+      );
+      if (isDuplicate) {
+        nextErrors.english = 'Card already exists';
+      }
+    }
+    
+    setErrors(nextErrors);
+  }, [hanzi, english, cards]);
 
   const handleAdd = () => {
     const nextErrors: { hanzi?: string; english?: string } = {};
     if (!hanzi.trim()) nextErrors.hanzi = 'Front is required';
     if (!english.trim()) nextErrors.english = 'Back is required';
+    
+    // Check for duplicates again before adding
+    if (hanzi.trim() && english.trim()) {
+      const isDuplicate = cards.some(card => 
+        card.hanzi.toLowerCase() === hanzi.trim().toLowerCase() ||
+        card.english.toLowerCase() === english.trim().toLowerCase()
+      );
+      if (isDuplicate) {
+        nextErrors.hanzi = 'Card already exists';
+        nextErrors.english = 'Card already exists';
+      }
+    }
+    
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -52,7 +95,9 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
               autoFocus
             />
           </div>
-          {errors.hanzi && <p className="text-red-400 text-xs mt-2 text-center w-full">{errors.hanzi}</p>}
+          <div className="h-8 flex items-center justify-center w-full">
+            {errors.hanzi && <p className="text-red-400 text-xs text-center">{errors.hanzi}</p>}
+          </div>
         </div>
 
         {/* Back field */}
@@ -69,7 +114,9 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
               placeholder="hello"
             />
           </div>
-          {errors.english && <p className="text-red-400 text-xs mt-2 text-center w-full">{errors.english}</p>}
+          <div className="h-8 flex items-center justify-center w-full">
+            {errors.english && <p className="text-red-400 text-xs text-center">{errors.english}</p>}
+          </div>
         </div>
       </div>
     </Modal>

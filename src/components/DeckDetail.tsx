@@ -79,7 +79,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
             )}
           </div>
           <div>
-            <h1 className="text-left">{deck.name}</h1>
+            <h2 className="text-left text-lg">{deck.name}</h2>
             <div className="text-sm text-left text-silver-custom mt-2 flex items-center gap-3">
               <span>New: {newCount}</span>
               <span className="text-gray-custom">|</span>
@@ -134,13 +134,21 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
       <div className="border-b border-granite-custom -mx-8 px-8">
         <nav className="flex gap-6">
           <button
-            className={`py-2 w-[110px] ${activeTab === 'lessons' ? 'text-light-custom border-b-2 border-light-custom' : 'text-gray-custom'}`}
+            className={`py-2 w-[110px] border-b-2 transition-colors duration-200 ${
+              activeTab === 'lessons' 
+                ? 'text-light-custom border-light-custom' 
+                : 'text-gray-custom border-transparent hover:opacity-80'
+            }`}
             onClick={() => setActiveTab('lessons')}
           >
             Lessons
           </button>
           <button
-            className={`py-2 w-[110px] ${activeTab === 'cards' ? 'text-light-custom border-b-2 border-light-custom' : 'text-gray-custom'}`}
+            className={`py-2 w-[110px] border-b-2 transition-colors duration-200 ${
+              activeTab === 'cards' 
+                ? 'text-light-custom border-light-custom' 
+                : 'text-gray-custom border-transparent hover:opacity-80'
+            }`}
             onClick={() => setActiveTab('cards')}
           >
             Cards
@@ -326,7 +334,7 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
       {deckCards.map((card) => {
         const isFlipped = flipped.has(card.id);
         return (
-          <div key={card.id} className="relative group">
+          <div key={card.id} className="relative group h-[196px]">
             <button
               onClick={() => handleToggle(card.id)}
               className="w-[164px] h-[196px]"
@@ -336,7 +344,7 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
                 <div className={`relative w-full h-full preserve-3d transition-transform duration-300 ${isFlipped ? 'rotate-y-180' : ''}`}>
                   {/* Front of card */}
                   <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center text-center px-3 backface-hidden">
-                    <span className="text-light-custom text-xl leading-snug break-words w-full">
+                    <span className="text-light-custom text-2xl leading-snug break-words w-full">
                       {card.hanzi}
                     </span>
                   </div>

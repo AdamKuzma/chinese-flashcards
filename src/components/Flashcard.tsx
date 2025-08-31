@@ -158,7 +158,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       {/* Card Display */}
       <div className="mb-6 perspective-1000">
         <div className={`${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`} style={{ transform: isTransitioning ? 'none' : `rotateX(${enterRotationX}deg)` }}>
-          <div className={`relative w-[272px] h-[325px] mx-auto rounded-2xl preserve-3d ${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`}
+          <div className={`relative w-[272px] h-[325px] mx-auto rounded-2xl preserve-3d cursor-pointer ${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`}
                style={{ transform: isTransitioning ? 'none' : (displayBack ? 'rotateY(180deg)' : 'rotateY(0deg)') }}
                onClick={() => { if (isShowingAnswer) setDisplayBack(prev => !prev); }}>
             {/* Front of card */}
@@ -174,13 +174,19 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               >
                 <img src={SoundIcon} alt="Sound" className="w-5 h-5" />
               </button>
-              <div className="text-6xl font-medium text-light-custom text-center px-4">
+              <div 
+                className="text-6xl font-medium text-light-custom text-center px-4 cursor-text"
+                onClick={(e) => e.stopPropagation()} // Prevent card flip when clicking on text
+              >
                 {card.hanzi}
               </div>
             </div>
             {/* Back of card */}
             <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center backface-hidden" style={{ transform: 'rotateY(180deg)' }}>
-              <div className="text-2xl text-light-custom font-medium text-center px-4">
+              <div 
+                className="text-2xl text-light-custom font-medium text-center px-4 cursor-text"
+                onClick={(e) => e.stopPropagation()} // Prevent card flip when clicking on text
+              >
                 {card.english}
               </div>
             </div>

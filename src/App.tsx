@@ -7,6 +7,7 @@ import type { Card, Deck } from './types';
 import { formatTimeUntilDue } from './utils';
 // Icons are used inside Nav component
 import PlusIcon from './assets/Plus.svg';
+import CardIcon from './assets/Card.svg';
 import './App.css';
 
 function App() {
@@ -305,7 +306,13 @@ function App() {
                           ) : null}
                         </div>
                       </div>
-                      <div className="mt-6 text-light-custom text-sm truncate w-[164px] text-center">{deck.name}</div>
+                      <div className="mt-6 text-silver-custom text-sm truncate w-[164px] text-center">
+                        <div>{deck.name}</div>
+                        <div className="mt-1.5 text-gray-custom text-xs flex items-center justify-center">
+                          <img src={CardIcon} alt="Card" className="w-4 h-4 mr-0.5" />
+                          {cards.filter(card => deck.cardIds.includes(card.id)).length}
+                        </div>
+                      </div>
                     </button>
                   ))}
                   <button
@@ -316,7 +323,7 @@ function App() {
                   >
                     <div className="w-[164px] h-[196px] flex items-center justify-center">
                       <div className="w-12 h-12 rounded-full bg-semidark-custom hover:bg-granite-custom transition-colors flex items-center justify-center">
-                        <img src={PlusIcon} alt="Create deck" className="w-5 h-5" />
+                        <img src={PlusIcon} alt="Create deck" className="w-6 h-6" />
                       </div>
                     </div>
                   </button>
@@ -353,7 +360,7 @@ function App() {
             <>
               <div className="flex justify-between items-center mb-8">
                 <h1 className="text-left">Library</h1>
-                <div className="text-gray-custom">
+                <div className="text-gray-custom text-sm">
                   {allCards.length} total cards
                 </div>
               </div>
