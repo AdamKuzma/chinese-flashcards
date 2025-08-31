@@ -6,6 +6,9 @@ import { EditDeckModal } from './EditDeckModal';
 import { EditCardModal } from './EditCardModal';
 import { PopoverMenu } from './PopoverMenu';
 import ShareIcon from '../assets/Share.svg';
+import LeafIcon from '../assets/Leaf.png';
+import ClockIcon from '../assets/Clock.svg';
+import FlowerIcon from '../assets/Flower.png';
 import { ImportModal } from './ImportModal';
 import type { Card } from '../types';
 import type { Deck } from '../types';
@@ -71,7 +74,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
 
   return (
     <div className="mt-[-4px] relative h-full min-h-0 flex flex-col">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-start mb-8">
         <div className="flex items-center gap-6">
           <div className="w-[112px] h-[134px] bg-granite-custom rounded-xl overflow-hidden flex-shrink-0">
             {deck.image && (
@@ -80,23 +83,41 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
           </div>
           <div>
             <h2 className="text-left text-lg">{deck.name}</h2>
-            <div className="text-sm text-left text-silver-custom mt-2 flex items-center gap-3">
-              <span>New: {newCount}</span>
-              <span className="text-gray-custom">|</span>
-              <span>Due: {dueCount}</span>
-              <span className="text-gray-custom">|</span>
-              <span>Learned: {learnedCount}</span>
+            <div className="text-sm text-left text-silver-custom mt-2 flex items-center gap-2.5">
+              <span className="flex items-center gap-1 relative group cursor-default">
+                <img src={LeafIcon} alt="New" className="w-4 h-4" />
+                {newCount}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  New
+                </div>
+              </span>
+              <span className="text-granite-custom cursor-default">|</span>
+              <span className="flex items-center gap-1 relative group cursor-default">
+                <img src={ClockIcon} alt="Due" className="w-4 h-4" />
+                {dueCount}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  Due
+                </div>
+              </span>
+              <span className="text-granite-custom cursor-default">|</span>
+              <span className="flex items-center gap-1 relative group cursor-default">
+                <img src={FlowerIcon} alt="Learned" className="w-4.5 h-4.5 rotate-180" />
+                {learnedCount}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                  Learned
+                </div>
+              </span>
             </div>
           </div>
         </div>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-3 items-start">
           <PopoverMenu
             placement="bottom-right"
             trigger={({ onClick, ref }) => (
               <button
                 onClick={onClick}
                 ref={ref as React.RefObject<HTMLButtonElement>}
-                className="deck-option-btn"
+                className="deck-option-btn self-start"
                 aria-label="Deck options"
                 title="Deck options"
               >
@@ -115,7 +136,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
               <button
                 onClick={onClick}
                 ref={ref as React.RefObject<HTMLButtonElement>}
-                className="deck-option-btn"
+                className="deck-option-btn self-start"
                 aria-label="Share options"
                 title="Share options"
               >
@@ -177,7 +198,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
               );
             }
             return (
-              <div className="mt-8 grid grid-cols-4 gap-4">
+              <div className="mt-8 grid grid-cols-4 gap-4 deck-detail-grid">
                 {lessons.map(({ num }) => {
                   const start = (num - 1) * lessonSize;
                   const end = start + lessonSize;
@@ -330,7 +351,7 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
   };
 
   return (
-    <div className="mt-8 grid grid-cols-4 gap-4">
+    <div className="mt-8 grid grid-cols-4 gap-4 deck-detail-grid">
       {deckCards.map((card) => {
         const isFlipped = flipped.has(card.id);
         return (

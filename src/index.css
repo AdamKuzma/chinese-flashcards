@@ -71,6 +71,10 @@ button {
   border-color: var(--color-light) !important;
 }
 
+.text-granite-custom {
+  color: var(--color-granite) !important;
+}
+
 .text-gray-custom {
   color: var(--color-gray) !important;
 }

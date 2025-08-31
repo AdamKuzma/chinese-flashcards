@@ -69,13 +69,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease-in-out;
   position: relative;
 }
 
-/* .nav-icon-btn:hover .nav-icon-wrapper {
+.nav-icon-btn:hover .nav-icon-wrapper {
   background-color: rgba(255, 255, 255, 0.05);
-} */
+}
 
 .nav-icon-btn:hover .nav-icon-wrapper img {
   filter: brightness(1.5);
@@ -89,7 +88,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease-in-out;
   background-color: transparent;
 }
 
@@ -97,4 +95,122 @@
 .nav-icon-btn .pointer-events-none {
   transition: opacity 0.2s ease-in-out;
   right: calc(100% - 6px);
+}
+
+/* Mobile responsive Nav - Mobile First */
+.nav-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: auto;
+  transform: none;
+  z-index: 50;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  justify-content: space-around;
+  padding: 8px 0;
+  background-color: rgba(34, 34, 34, 0.95);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-container .nav-icon-btn {
+  width: 48px;
+  height: 48px;
+}
+
+.nav-container .nav-icon-wrapper {
+  width: 32px;
+  height: 32px;
+}
+
+/* Mobile tooltip positioning - above icons */
+@media (max-width: 905px) {
+  .nav-container .pointer-events-none {
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: calc(100% + 2px) !important;
+    top: auto !important;
+  }
+}
+
+/* Desktop styles - override mobile defaults */
+@media (min-width: 906px) {
+  .nav-container {
+    position: absolute !important;
+    left: 0 !important;
+    top: 4px !important;
+    transform: translateX(-100%) !important;
+    width: auto !important;
+    height: auto !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    border-top: none !important;
+    bottom: auto !important;
+    right: auto !important;
+  }
+  
+  .nav-container .nav-icon-btn {
+    width: 64px !important;
+    height: 60px !important;
+  }
+  
+  .nav-container .nav-icon-wrapper {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  /* Remove bottom padding on desktop */
+  #root {
+    padding-bottom: 0 !important;
+  }
+}
+
+/* Add bottom padding to main content to prevent overlap with mobile nav */
+#root {
+  padding-bottom: 100px;
+}
+
+/* Custom breakpoint for Decks grid */
+@media (max-width: 510px) {
+  .decks-grid-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 511px) and (max-width: 759px) {
+  .decks-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 760px) {
+  .decks-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Custom breakpoint for Deck detail page grid */
+@media (max-width: 595px) {
+  .deck-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 596px) and (max-width: 777px) {
+  .deck-detail-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 778px) {
+  .deck-detail-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
 }

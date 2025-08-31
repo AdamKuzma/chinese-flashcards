@@ -12,7 +12,7 @@ interface NavProps {
 
 export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
   return (
-    <div className="absolute left-0 top-1 -translate-x-full transform z-40 flex flex-col items-center">
+    <div className="nav-container flex items-center z-40">
       <button
         onClick={() => onNavigate('dashboard')}
         className="nav-icon-btn group"
