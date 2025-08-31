@@ -19,11 +19,10 @@ export const ReviewView: React.FC = () => {
     getAllCards,
     sessionInitialCount,
     selectedDeckId,
-    stopReview,
   } = useFlashcardStore();
 
   const currentCard = getCurrentCard();
-  const { index, total } = getSessionPosition();
+  const { total } = getSessionPosition();
   const dueCards = getDueCards();
   const allCards = getAllCards();
   const cardsToReview = reviewAll ? allCards : dueCards;
@@ -67,9 +66,6 @@ export const ReviewView: React.FC = () => {
 
   if (!(isReviewing && cardsToReview.length > 0 && currentCard)) {
     // Not actively reviewing - always show completion state
-    const lessonSize = 10;
-    const deckCards = effectiveDeckId ? getAllCards(effectiveDeckId) : [];
-    const totalLessons = Math.ceil(deckCards.length / lessonSize);
     
     // Always show completion state when not actively reviewing
     return (
@@ -91,7 +87,6 @@ export const ReviewView: React.FC = () => {
             {effectiveDeckId ? (() => {
               const lessonSize = 10;
               const deckCards = getAllCards(effectiveDeckId);
-              const totalLessons = Math.ceil(deckCards.length / lessonSize);
               const lessonCards = deckCards.slice(0, lessonSize);
               return `${lessonCards.length} of ${lessonCards.length}`;
             })() : '0 of 0'}
@@ -128,7 +123,12 @@ export const ReviewView: React.FC = () => {
           </div>
         </div>
         <div className="text-gray-custom text-sm text-right w-16">
-          {sessionInitialCount - total + 1} of {sessionInitialCount}
+          {effectiveDeckId ? (() => {
+            const lessonSize = 10;
+            const deckCards = getAllCards(effectiveDeckId);
+            const lessonCards = deckCards.slice(0, lessonSize);
+            return `${lessonCards.length} of ${lessonCards.length}`;
+          })() : '0 of 0'}
         </div>
       </div>
 
