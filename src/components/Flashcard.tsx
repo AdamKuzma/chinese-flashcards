@@ -48,12 +48,20 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   // When answer is revealed, start by showing the back; allow toggling back/forth thereafter
   useEffect(() => {
     if (isTransitioning || lastCardId !== card.id) return; // Don't change displayBack during transitions or when card is changing
-    if (isShowingAnswer) {
+    // Only allow showing back if we're not in a transition and the card hasn't changed
+    if (isShowingAnswer && !isTransitioning && lastCardId === card.id) {
       setDisplayBack(true);
-    } else {
+    } else if (!isShowingAnswer && !isTransitioning && lastCardId === card.id) {
       setDisplayBack(false);
     }
   }, [isShowingAnswer, isTransitioning, lastCardId, card.id]);
+
+  // Additional safeguard: force front side during transitions
+  useEffect(() => {
+    if (isTransitioning) {
+      setDisplayBack(false);
+    }
+  }, [isTransitioning]);
 
   // On card change, run an X-axis enter animation (top -> bottom flip)
   useEffect(() => {
@@ -62,12 +70,16 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       setIsTransitioning(true);
       setEnterRotationX(0);
       setDisplayBack(false);
-      // Force immediate state update
+      // Force immediate state update with longer delay to ensure state settles
       setTimeout(() => {
         setIsTransitioning(false);
-      }, 0);
+      }, 100); // Increased from 0 to 100ms
     }
-    if (lastCardId !== card.id) setLastCardId(card.id);
+    if (lastCardId !== card.id) {
+      setLastCardId(card.id);
+      // Always reset to front side when card changes
+      setDisplayBack(false);
+    }
   }, [card.id, lastCardId]);
 
   // Only reset displayBack when starting a completely new review session
