@@ -56,14 +56,14 @@ export const PopoverMenu: React.FC<PopoverMenuProps> = ({ trigger, actions, plac
       {mounted && (
         <div
           ref={menuRef}
-          className={`absolute ${posClasses} bg-granite-custom rounded-lg shadow-2xl border border-neutral-700 z-50 min-w-32 transition-opacity duration-150 ease-in-out ${visible ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute ${posClasses} bg-granite-custom rounded-lg shadow-2xl border border-neutral-700 z-50 min-w-40 transition-opacity duration-150 ease-in-out ${visible ? 'opacity-100' : 'opacity-0'}`}
         >
-          <div className="py-1">
+          <div className="py-1 px-1.5">
             {actions.map((action, idx) => (
               <button
                 key={action.key}
                 onClick={() => { action.onClick(); setOpen(false); }}
-                className={`w-full px-4 py-2 text-left text-light-custom hover:bg-neutral-700 transition-colors ${idx === 0 ? 'rounded-t-lg' : ''} ${idx === actions.length - 1 ? 'rounded-b-lg' : ''} ${action.className || ''}`}
+                className={`w-full px-4 py-1.5 text-left text-sm text-light-custom hover:bg-neutral-700 transition-colors my-0.5 rounded-md ${action.className || ''}`}
               >
                 {action.label}
               </button>
