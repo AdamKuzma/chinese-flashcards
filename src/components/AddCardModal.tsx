@@ -13,14 +13,15 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
   const [english, setEnglish] = useState('');
   const [errors, setErrors] = useState<{ hanzi?: string; english?: string }>({});
   
-  const { cards } = useFlashcardStore();
+  // Get cards from store when needed to ensure we have the latest state
 
   // Check for duplicates when hanzi or english changes
   useEffect(() => {
     const nextErrors: { hanzi?: string; english?: string } = {};
     
     if (hanzi.trim()) {
-      const isDuplicate = cards.some(card => 
+      const currentCards = useFlashcardStore.getState().cards;
+      const isDuplicate = currentCards.some(card => 
         card.hanzi.toLowerCase() === hanzi.trim().toLowerCase() ||
         card.english.toLowerCase() === hanzi.trim().toLowerCase()
       );
@@ -30,7 +31,8 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
     }
     
     if (english.trim()) {
-      const isDuplicate = cards.some(card => 
+      const currentCards = useFlashcardStore.getState().cards;
+      const isDuplicate = currentCards.some(card => 
         card.hanzi.toLowerCase() === english.trim().toLowerCase() ||
         card.english.toLowerCase() === english.trim().toLowerCase()
       );
@@ -40,7 +42,7 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
     }
     
     setErrors(nextErrors);
-  }, [hanzi, english, cards]);
+  }, [hanzi, english]);
 
   const handleAdd = () => {
     const nextErrors: { hanzi?: string; english?: string } = {};
@@ -49,7 +51,8 @@ export const AddCardModal: React.FC<AddCardModalProps> = ({ isOpen, onClose, onA
     
     // Check for duplicates again before adding
     if (hanzi.trim() && english.trim()) {
-      const isDuplicate = cards.some(card => 
+      const currentCards = useFlashcardStore.getState().cards;
+      const isDuplicate = currentCards.some(card => 
         card.hanzi.toLowerCase() === hanzi.trim().toLowerCase() ||
         card.english.toLowerCase() === english.trim().toLowerCase()
       );
