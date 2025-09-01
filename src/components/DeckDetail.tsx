@@ -6,6 +6,7 @@ import { EditDeckModal } from './EditDeckModal';
 import { EditCardModal } from './EditCardModal';
 import { PopoverMenu } from './PopoverMenu';
 import ShareIcon from '../assets/Share.svg';
+import PlusIcon from '../assets/Plus.svg';
 import LeafIcon from '../assets/Leaf.png';
 import ClockIcon from '../assets/Clock.svg';
 import FlowerIcon from '../assets/Flower.png';
@@ -111,25 +112,15 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
           </div>
         </div>
         <div className="flex gap-3 items-start">
-          <PopoverMenu
-            placement="bottom-right"
-            trigger={({ onClick, ref }) => (
-              <button
-                onClick={onClick}
-                ref={ref as React.RefObject<HTMLButtonElement>}
-                className="deck-option-btn self-start"
-                aria-label="Deck options"
-                title="Deck options"
-              >
-                <span className="text-lg">⋯</span>
-              </button>
-            )}
-            actions={[
-              { key: 'add', label: 'Add cards', onClick: () => setShowAddCard(true) },
-              { key: 'edit', label: 'Edit deck', onClick: () => setShowEditDeck(true) },
-              { key: 'delete', label: 'Delete deck', onClick: () => onDeleteDeck(), className: 'text-red-300' },
-            ]}
-          />
+          
+          <button
+            onClick={() => setShowAddCard(true)}
+            className="deck-option-btn self-start"
+            aria-label="Add cards"
+            title="Add cards"
+          >
+            <img src={PlusIcon} alt="Add cards" className="w-4 h-4" />
+          </button>
           <PopoverMenu
             placement="bottom-right"
             trigger={({ onClick, ref }) => (
@@ -146,6 +137,24 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
             actions={[
               { key: 'export', label: 'Export deck', onClick: () => handleExportDeck() },
               { key: 'import', label: 'Import cards', onClick: () => setShowImportModal(true) },
+            ]}
+          />
+          <PopoverMenu
+            placement="bottom-right"
+            trigger={({ onClick, ref }) => (
+              <button
+                onClick={onClick}
+                ref={ref as React.RefObject<HTMLButtonElement>}
+                className="deck-option-btn self-start"
+                aria-label="Deck options"
+                title="Deck options"
+              >
+                <span className="text-lg">⋯</span>
+              </button>
+            )}
+            actions={[
+              { key: 'edit', label: 'Edit deck', onClick: () => setShowEditDeck(true) },
+              { key: 'delete', label: 'Delete deck', onClick: () => onDeleteDeck(), className: 'text-red-300' },
             ]}
           />
         </div>

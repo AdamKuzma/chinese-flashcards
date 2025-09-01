@@ -59,7 +59,7 @@ export const PopoverMenu: React.FC<PopoverMenuProps> = ({ trigger, actions, plac
           className={`absolute ${posClasses} bg-granite-custom rounded-lg shadow-2xl border border-neutral-700 z-50 min-w-40 transition-opacity duration-150 ease-in-out ${visible ? 'opacity-100' : 'opacity-0'}`}
         >
           <div className="py-1 px-1.5">
-            {actions.map((action, idx) => (
+            {actions.map((action) => (
               <button
                 key={action.key}
                 onClick={() => { action.onClick(); setOpen(false); }}
