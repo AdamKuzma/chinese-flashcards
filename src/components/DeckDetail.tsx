@@ -256,6 +256,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
           const { addCard, selectedDeckId, setSelectedDeckId } = useFlashcardStore.getState();
           if (!selectedDeckId) setSelectedDeckId(deckId);
           addCard({ hanzi, pinyin: pinyin || '', english });
+          onToast('Card added');
         }}
       />
 
