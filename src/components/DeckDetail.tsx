@@ -7,7 +7,7 @@ import { EditCardModal } from './EditCardModal';
 import { PopoverMenu } from './PopoverMenu';
 import ShareIcon from '../assets/Share.svg';
 import PlusIcon from '../assets/Plus.svg';
-import LeafIcon from '../assets/Leaf.png';
+import LockIcon from '../assets/Lock.svg';
 import ClockIcon from '../assets/Clock.svg';
 import FlowerIcon from '../assets/Flower.png';
 import { ImportModal } from './ImportModal';
@@ -86,7 +86,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
             <h2 className="text-left text-lg">{deck.name}</h2>
             <div className="text-sm text-left text-silver-custom mt-2 flex items-center gap-2.5">
               <span className="flex items-center gap-1 relative group cursor-default">
-                <img src={LeafIcon} alt="New" className="w-4 h-4" />
+                <img src={LockIcon} alt="New" className="w-4 h-4" />
                 {newCount}
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                   New
