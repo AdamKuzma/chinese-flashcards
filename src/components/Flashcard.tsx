@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Card } from '../types.ts';
 import { ReviewQuality } from '../types.ts';
-import { getCardDebugInfo } from '../utils';
+//import { getCardDebugInfo } from '../utils';
 import Button from './Button';
 import { useFlashcardStore } from '../store';
 import SoundIcon from '../assets/Sound.svg';
@@ -22,10 +22,10 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   onShowAnswer,
   onReview,
 }) => {
-  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  //const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
-  const debugInfo = getCardDebugInfo(card);
+  //const debugInfo = getCardDebugInfo(card);
   const [displayBack, setDisplayBack] = useState(false);
   const [enterRotationX, setEnterRotationX] = useState(0);
   const [lastCardId, setLastCardId] = useState<string | null>(null);
