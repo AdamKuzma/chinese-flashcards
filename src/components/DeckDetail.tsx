@@ -207,7 +207,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
               );
             }
             return (
-              <div className="mt-8 grid grid-cols-4 gap-4 deck-detail-grid">
+              <div className="mt-8 grid grid-cols-4 gap-6 deck-detail-grid">
                 {lessons.map(({ num }) => {
                   const start = (num - 1) * lessonSize;
                   const end = start + lessonSize;
@@ -223,7 +223,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
                   return (
                     <div key={num} className="relative">
                       <button
-                        className="w-[164px] h-[196px]"
+                        className="w-[160px] h-[190px]"
                         onClick={() => {
                           const ids = slice.map((c) => c.id);
                           useFlashcardStore.getState().startReviewWithCardIds(ids);
@@ -356,21 +356,21 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
     onToast('Card removed');
   };
 
-  const handleSave = (id: string, values: { hanzi: string; pinyin?: string; english: string }) => {
-    useFlashcardStore.getState().updateCard(id, { hanzi: values.hanzi, pinyin: values.pinyin || '', english: values.english });
+  const handleSave = (id: string, values: { hanzi: string; english: string }) => {
+    useFlashcardStore.getState().updateCard(id, { hanzi: values.hanzi, pinyin: '', english: values.english });
     setEditId(null);
     onToast('Card saved');
   };
 
   return (
-    <div className="mt-8 grid grid-cols-4 gap-4 deck-detail-grid">
+    <div className="mt-8 grid grid-cols-4 gap-6 deck-detail-grid">
       {deckCards.map((card) => {
         const isFlipped = flipped.has(card.id);
         return (
-          <div key={card.id} className="relative group h-[196px]">
+          <div key={card.id} className="relative group h-[190px]">
             <button
               onClick={() => handleToggle(card.id)}
-              className="w-[164px] h-[196px]"
+              className="w-[160px] h-[190px]"
               title="Toggle card text"
             >
               <div className="w-full h-full perspective-1000">
@@ -417,7 +417,6 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
                 isOpen={true}
                 onClose={() => setEditId(null)}
                 initialHanzi={card.hanzi}
-                initialPinyin={card.pinyin}
                 initialEnglish={card.english}
                 onSave={(vals) => handleSave(card.id, vals)}
               />

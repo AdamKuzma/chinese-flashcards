@@ -248,73 +248,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         </div>
       )}
 
-      {/* Debug Info Toggle */}
-      <div className="flex justify-center mt-6 mb-4">
-        <Button
-          onClick={() => setShowDebugInfo(!showDebugInfo)}
-          variant="cancel"
-          size="sm"
-          className="text-xs"
-        >
-          {showDebugInfo ? '▲ Hide' : '▼ Show'} Algorithm Details
-        </Button>
-      </div>
 
-      {/* Debug Information */}
-      {showDebugInfo && (
-        <div className="bg-granite-custom rounded-lg p-4 mb-6 text-left">
-          <h4 className="text-sm font-medium text-light-custom mb-3">Scheduling Details (FSRS)</h4>
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <span className="text-silver-custom">Next Review:</span>
-              <div className="text-light-custom font-medium">{debugInfo.nextReview}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">Phase:</span>
-              <div className="text-light-custom font-medium capitalize">{debugInfo.phase}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">Interval:</span>
-              <div className="text-light-custom font-medium">
-                {debugInfo.phase === 'learning' || debugInfo.phase === 'relearning' 
-                  ? `Step ${(debugInfo.stepIndex ?? 0) + 1}`
-                  : `${debugInfo.intervalDays} day${debugInfo.intervalDays !== 1 ? 's' : ''}`
-                }
-              </div>
-            </div>
-            <div>
-              <span className="text-silver-custom">Consecutive Correct:</span>
-              <div className="text-light-custom font-medium">{debugInfo.consecutiveCorrect}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">Total Lapses:</span>
-              <div className="text-light-custom font-medium">{debugInfo.lapses}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">FSRS Stability:</span>
-              <div className="text-light-custom font-medium">{debugInfo.stability ?? '—'}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">FSRS Difficulty:</span>
-              <div className="text-light-custom font-medium">{debugInfo.difficulty ?? '—'}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">FSRS State:</span>
-              <div className="text-light-custom font-medium">{debugInfo.fsrsState ?? '—'}</div>
-            </div>
-            <div>
-              <span className="text-silver-custom">Audio Cached:</span>
-              <div className="text-light-custom font-medium">
-                {audioCache[card.hanzi] ? '✅ Yes' : '❌ No'}
-              </div>
-            </div>
-          </div>
-          <div className="mt-3">
-            <span className="text-silver-custom text-xs">Exact due time:</span>
-            <div className="text-light-custom text-xs font-mono">{debugInfo.exactDueTime}</div>
-          </div>
-        </div>
-      )}
 
       {/* Navigation Buttons */}
       {/* {showNavigation && (

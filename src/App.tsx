@@ -383,7 +383,7 @@ function App() {
                 </div>
               )}
               
-              <div className="space-y-0 max-h-140 overflow-y-auto">
+              <div className="space-y-0 flex-1 min-h-0 overflow-y-auto -mr-8 pr-8">
                 {allCards.length === 0 ? (
                   <p className="text-gray-custom">No cards yet. Add your first card to get started!</p>
                 ) : (
