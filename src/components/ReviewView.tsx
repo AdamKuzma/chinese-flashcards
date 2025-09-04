@@ -63,7 +63,12 @@ export const ReviewView: React.FC = () => {
       if (!isReviewing || !currentCard) return;
       
       // Prevent default behavior for our custom keys
-      if (['Enter', '1', '2', '3', '4', 's', 'S'].includes(event.key)) {
+      if (['Enter', '1', '2', '3', '4'].includes(event.key)) {
+        event.preventDefault();
+      }
+      
+      // For S key, only prevent default if no modifier keys are pressed
+      if ((event.key === 's' || event.key === 'S') && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
         event.preventDefault();
       }
 
@@ -103,10 +108,12 @@ export const ReviewView: React.FC = () => {
           break;
         case 's':
         case 'S':
-          // Play card sound
-          const soundButton = document.querySelector('button[title*="Listen to pronunciation"], button[title*="Playing"]');
-          if (soundButton) {
-            (soundButton as HTMLButtonElement).click();
+          // Play card sound - but not if modifier keys are pressed (like Cmd+S)
+          if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+            const soundButton = document.querySelector('button[title*="Listen to pronunciation"], button[title*="Playing"]');
+            if (soundButton) {
+              (soundButton as HTMLButtonElement).click();
+            }
           }
           break;
       }
