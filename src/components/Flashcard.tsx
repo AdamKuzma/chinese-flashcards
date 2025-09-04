@@ -5,6 +5,10 @@ import { ReviewQuality } from '../types.ts';
 import Button from './Button';
 import { useFlashcardStore } from '../store';
 import SoundIcon from '../assets/Sound.svg';
+import BookIcon from '../assets/book.svg';
+import ShareIcon from '../assets/Share.svg';
+import RefreshIcon from '../assets/Refresh.svg';
+import BookmarkIcon from '../assets/Bookmark.svg';
 import { audioCache } from '../utils/audioCache';
 
 interface FlashcardProps {
@@ -33,6 +37,9 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [lastCardId, setLastCardId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showSentence, setShowSentence] = useState(false);
+  const [sentenceData, setSentenceData] = useState<{chinese: string, english: string} | null>(null);
+  const [isLoadingSentence, setIsLoadingSentence] = useState(false);
 
   // Get review session state from store
   const { isReviewing, reviewAll } = useFlashcardStore();
@@ -77,6 +84,10 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       setIsTransitioning(true);
       setEnterRotationX(0);
       setDisplayBack(false);
+      // Reset sentence when card changes
+      setShowSentence(false);
+      setSentenceData(null);
+      setIsLoadingSentence(false);
       // Force immediate state update with longer delay to ensure state settles
       setTimeout(() => {
         setIsTransitioning(false);
@@ -266,6 +277,99 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               size="lg"
             >
               Easy
+            </Button>
+          </div>
+          
+          {/* Sentence Card */}
+          {showSentence && (
+            <div className={`mt-12 p-4 py-3 border border-granite-custom rounded-xl ${isLoadingSentence ? 'bg-white sentence-loading' : 'bg-granite-custom/50'}`}>
+              {isLoadingSentence ? (
+                <div className="flex justify-between items-middle">
+                  <div className="flex-1 text-left pl-2">
+                    <div className="text-lg text-light-custom leading-7 min-h-[1.75rem]"></div>
+                    <div className="text-sm text-gray-custom leading-5 min-h-[1.25rem]"></div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <div className="w-8 h-8"></div>
+                    <div className="w-8 h-8"></div>
+                    <div className="w-8 h-8"></div>
+                  </div>
+                </div>
+              ) : sentenceData ? (
+                <div className="flex justify-between items-middle">
+                  <div className="flex-1 text-left pl-2">
+                    <div className="text-lg text-light-custom">
+                      {sentenceData.chinese}
+                    </div>
+                    <div className="text-sm text-gray-custom">
+                      {sentenceData.english}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => {
+                        // TODO: Play sentence audio
+                        console.log('Play sentence audio');
+                      }}
+                      className="w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/10 rounded transition-colors"
+                      title="Play sentence audio"
+                    >
+                      <img src={SoundIcon} alt="Sound" className="w-4 h-4 sound-icon-gray" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        // TODO: Save sentence
+                        console.log('Bookmark');
+                      }}
+                      className="w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/10 rounded transition-colors"
+                      title="Bookmark"
+                    >
+                      <img src={BookmarkIcon} alt="Save" className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        // TODO: Generate new sentence
+                        console.log('Generate new sentence');
+                      }}
+                      className="w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/10 rounded transition-colors"
+                      title="Generate new sentence"
+                    >
+                      <img src={RefreshIcon} alt="Refresh" className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+          
+          {/* Sentence Button */}
+          <div className="flex justify-center mt-4">
+            <Button
+              onClick={() => {
+                if (showSentence) {
+                  setShowSentence(false);
+                  setIsLoadingSentence(false);
+                } else {
+                  setIsLoadingSentence(true);
+                  setShowSentence(true);
+                  
+                  // Simulate loading for 800ms before showing sentence
+                  setTimeout(() => {
+                    // TODO: Replace with actual AI sentence generation
+                    setSentenceData({
+                      chinese: `${card.hanzi}是一个很好的词。`,
+                      english: `${card.english} is a good word.`
+                    });
+                    setIsLoadingSentence(false);
+                  }, 800);
+                }
+              }}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5"
+            >
+              <img src={BookIcon} alt="Book" className="w-4 h-4" />
+              Sentence
             </Button>
           </div>
         </div>

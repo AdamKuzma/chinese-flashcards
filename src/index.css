@@ -190,6 +190,25 @@ button {
   backface-visibility: hidden;
 }
 
+/* Sentence loading animation */
+@keyframes sentence-loading {
+  0%, 100% {
+    opacity: 0.02;
+  }
+  50% {
+    opacity: 0.04;
+  }
+}
+
+.sentence-loading {
+  animation: sentence-loading 1s ease-in-out infinite;
+}
+
+/* Sound icon color override to match bookmark */
+.sound-icon-gray {
+  filter: brightness(0) saturate(100%) invert(54%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

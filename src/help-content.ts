@@ -17,7 +17,6 @@ export const helpContent = {
         • Show pinyin when hovering over a character
         • Add card types (ie. hanzi -> pinyin, pinyin -> hanzi, audio -> hanzi, etc)
         • Example sentences for each character using AI
-        • Add keystrokes for review options
         • Add search bar and sorting for Browse tab
         • Mobile support
       `
@@ -26,6 +25,7 @@ export const helpContent = {
         title: "Done",
         content: `
           • Listen button for audio playback
+          • Add keystrokes for review options
         `
       },
   ]
