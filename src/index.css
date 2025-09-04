@@ -204,10 +204,11 @@ button {
   animation: sentence-loading 1s ease-in-out infinite;
 }
 
-/* Sound icon color override to match bookmark */
-.sound-icon-gray {
-  filter: brightness(0) saturate(100%) invert(54%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+/* Icon color filters to convert gray to silver */
+.icon-silver {
+  filter: brightness(0) saturate(100%) invert(73%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
 }
+
 
 @media (prefers-color-scheme: light) {
   :root {

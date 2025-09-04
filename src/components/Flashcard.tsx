@@ -9,6 +9,7 @@ import BookIcon from '../assets/book.svg';
 import RefreshIcon from '../assets/Refresh.svg';
 import BookmarkIcon from '../assets/Bookmark.svg';
 import { audioCache } from '../utils/audioCache';
+import { generateSentence } from '../utils/sentenceGenerator';
 
 interface FlashcardProps {
   card: Card;
@@ -39,6 +40,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [showSentence, setShowSentence] = useState(false);
   const [sentenceData, setSentenceData] = useState<{chinese: string, english: string} | null>(null);
   const [isLoadingSentence, setIsLoadingSentence] = useState(false);
+  const [isPlayingSentence, setIsPlayingSentence] = useState(false);
 
   // Get review session state from store
   const { isReviewing, reviewAll } = useFlashcardStore();
@@ -87,6 +89,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       setShowSentence(false);
       setSentenceData(null);
       setIsLoadingSentence(false);
+      setIsPlayingSentence(false);
       // Force immediate state update with longer delay to ensure state settles
       setTimeout(() => {
         setIsTransitioning(false);
@@ -183,6 +186,47 @@ export const Flashcard: React.FC<FlashcardProps> = ({
     } catch (error) {
       console.error('Error playing audio:', error);
       setIsPlaying(false);
+    }
+  };
+
+  const playSentenceAudio = async () => {
+    if (isPlayingSentence || !sentenceData) return;
+    
+    setIsPlayingSentence(true);
+    try {
+      const response = await fetch('https://chinese-flashcards-alpha.vercel.app/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: sentenceData.chinese }),
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        
+        audio.onended = () => {
+          setIsPlayingSentence(false);
+          URL.revokeObjectURL(audioUrl); // Clean up the blob URL
+        };
+        
+        audio.onerror = () => {
+          setIsPlayingSentence(false);
+          URL.revokeObjectURL(audioUrl);
+          console.error('Error playing sentence audio');
+        };
+        
+        await audio.play();
+      } else {
+        console.error('Failed to generate sentence speech');
+        setIsPlayingSentence(false);
+      }
+    } catch (error) {
+      console.error('Error playing sentence audio:', error);
+      setIsPlayingSentence(false);
     }
   };
 
@@ -306,34 +350,53 @@ export const Flashcard: React.FC<FlashcardProps> = ({
                   </div>
                   <div className="flex items-center gap-2 ml-4">
                     <button
-                      onClick={() => {
-                        // TODO: Play sentence audio
-                        console.log('Play sentence audio');
-                      }}
-                      className="w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/10 rounded transition-colors"
-                      title="Play sentence audio"
+                      onClick={playSentenceAudio}
+                      disabled={isPlayingSentence}
+                      className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <img src={SoundIcon} alt="Sound" className="w-4 h-4 sound-icon-gray" />
+                      <img src={SoundIcon} alt="Sound" className="w-4 h-4" />
+                      <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isPlayingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                        Read aloud
+                      </div>
                     </button>
                     <button
                       onClick={() => {
                         // TODO: Save sentence
                         console.log('Bookmark');
                       }}
-                      className="w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/10 rounded transition-colors"
-                      title="Bookmark"
+                      className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors"
                     >
-                      <img src={BookmarkIcon} alt="Save" className="w-5 h-5" />
+                      <img src={BookmarkIcon} alt="Save" className="w-5 h-5 icon-silver" />
+                      <div className="pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        Bookmark
+                      </div>
                     </button>
                     <button
-                      onClick={() => {
-                        // TODO: Generate new sentence
-                        console.log('Generate new sentence');
+                      onClick={async () => {
+                        if (isLoadingSentence) return; // Prevent multiple requests
+                        
+                        setIsLoadingSentence(true);
+                        try {
+                          const data = await generateSentence(card.hanzi, card.english);
+                          setSentenceData(data);
+                        } catch (error) {
+                          console.error('Error regenerating sentence:', error);
+                          // Fallback to mock data on error
+                          setSentenceData({
+                            chinese: `${card.hanzi}是一个很好的词。`,
+                            english: `${card.english} is a good word.`
+                          });
+                        } finally {
+                          setIsLoadingSentence(false);
+                        }
                       }}
-                      className="w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/10 rounded transition-colors"
-                      title="Generate new sentence"
+                      disabled={isLoadingSentence}
+                      className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <img src={RefreshIcon} alt="Refresh" className="w-5 h-5" />
+                      <img src={RefreshIcon} alt="Refresh" className="w-5 h-5 icon-silver" />
+                      <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isLoadingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                        New sentence
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -344,7 +407,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
           {/* Sentence Button */}
           <div className="flex justify-center mt-4">
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (showSentence) {
                   setShowSentence(false);
                   setIsLoadingSentence(false);
@@ -352,15 +415,20 @@ export const Flashcard: React.FC<FlashcardProps> = ({
                   setIsLoadingSentence(true);
                   setShowSentence(true);
                   
-                  // Simulate loading for 800ms before showing sentence
-                  setTimeout(() => {
-                    // TODO: Replace with actual AI sentence generation
+                  // Generate sentence using OpenAI API
+                  try {
+                    const data = await generateSentence(card.hanzi, card.english);
+                    setSentenceData(data);
+                  } catch (error) {
+                    console.error('Error generating sentence:', error);
+                    // Fallback to mock data on error
                     setSentenceData({
                       chinese: `${card.hanzi}是一个很好的词。`,
                       english: `${card.english} is a good word.`
                     });
+                  } finally {
                     setIsLoadingSentence(false);
-                  }, 800);
+                  }
                 }
               }}
               size="sm"
