@@ -5,6 +5,7 @@ import { ReviewQuality } from '../types.ts';
 import Button from './Button';
 import { useFlashcardStore } from '../store';
 import SoundIcon from '../assets/Sound.svg';
+import { audioCache } from '../utils/audioCache';
 
 interface FlashcardProps {
   card: Card;
@@ -24,7 +25,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({
 }) => {
   //const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioCache, setAudioCache] = useState<Record<string, string>>({});
   //const debugInfo = getCardDebugInfo(card);
   const [displayBack, setDisplayBack] = useState(false);
   const [enterRotationX, setEnterRotationX] = useState(0);
@@ -35,15 +35,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   // Get review session state from store
   const { isReviewing, reviewAll } = useFlashcardStore();
 
-  // Cleanup audio URLs when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clean up all cached audio URLs to prevent memory leaks
-      Object.values(audioCache).forEach(url => {
-        URL.revokeObjectURL(url);
-      });
-    };
-  }, [audioCache]);
+  // No need for cleanup since we're using global audio cache
 
   // When answer is revealed, start by showing the back; allow toggling back/forth thereafter
   useEffect(() => {
@@ -94,9 +86,10 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const playAudio = async () => {
     if (isPlaying) return;
     
-    // Check cache first - if we have this character cached, play it immediately
-    if (audioCache[card.hanzi]) {
-      const audio = new Audio(audioCache[card.hanzi]);
+    // Check cache first - if we have this character cached, try to play it
+    const cachedUrl = audioCache.get(card.hanzi);
+    if (cachedUrl) {
+      const audio = new Audio(cachedUrl);
       setIsPlaying(true);
       
       audio.onended = () => {
@@ -105,11 +98,26 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       
       audio.onerror = () => {
         setIsPlaying(false);
-        console.error('Error playing cached audio');
+        console.error('Error playing cached audio, will refetch');
+        // Remove the invalid URL from cache and refetch
+        audioCache.delete(card.hanzi);
+        // Retry by calling playAudio again
+        setTimeout(() => playAudio(), 100);
+        return;
       };
       
-      await audio.play();
-      return;
+      try {
+        await audio.play();
+        return;
+      } catch (error) {
+        setIsPlaying(false);
+        console.error('Error playing cached audio, will refetch:', error);
+        // Remove the invalid URL from cache and refetch
+        audioCache.delete(card.hanzi);
+        // Retry by calling playAudio again
+        setTimeout(() => playAudio(), 100);
+        return;
+      }
     }
     
     // Not in cache, fetch from API
@@ -129,7 +137,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         const audioUrl = URL.createObjectURL(audioBlob);
         
         // Cache the audio URL for future use
-        setAudioCache(prev => ({ ...prev, [card.hanzi]: audioUrl }));
+        audioCache.set(card.hanzi, audioUrl);
         
         const audio = new Audio(audioUrl);
         

@@ -77,7 +77,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
     <div className="mt-[-4px] relative h-full min-h-0 flex flex-col">
       <div className="flex justify-between items-start mb-8">
         <div className="flex items-center gap-6">
-          <div className="w-[112px] h-[134px] bg-granite-custom rounded-xl overflow-hidden flex-shrink-0">
+          <div className="w-[64px] h-[76px] bg-granite-custom rounded-lg overflow-hidden flex-shrink-0">
             {deck.image && (
               <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
             )}
@@ -180,9 +180,9 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
 
       {/* Tabs */}
       <div className="border-b border-granite-custom -mx-8 px-8">
-        <nav className="flex gap-6">
+        <nav className="flex">
           <button
-            className={`py-2 w-[110px] border-b-2 transition-colors duration-200 ${
+            className={`py-2 text-md w-[142px] border-b-2 transition-colors duration-200 ${
               activeTab === 'lessons' 
                 ? 'text-light-custom border-light-custom' 
                 : 'text-gray-custom border-transparent hover:opacity-80'
@@ -192,14 +192,14 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
             Lessons
           </button>
           <button
-            className={`py-2 w-[110px] border-b-2 transition-colors duration-200 ${
+            className={`py-2 w-[142px] border-b-2 transition-colors duration-200 ${
               activeTab === 'cards' 
                 ? 'text-light-custom border-light-custom' 
                 : 'text-gray-custom border-transparent hover:opacity-80'
             }`}
             onClick={() => setActiveTab('cards')}
           >
-            Cards
+            Cards ({deckCards.length})
           </button>
         </nav>
       </div>

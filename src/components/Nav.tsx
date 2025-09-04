@@ -4,7 +4,7 @@ import LibraryIcon from '../assets/library.svg';
 import StatsIcon from '../assets/Stats.svg';
 import ProfileIcon from '../assets/Profile.svg';
 
-type Tab = 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail';
+type Tab = 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail' | 'profile' | 'stats';
 
 interface NavProps {
   onNavigate: (tab: Tab) => void;
@@ -40,6 +40,7 @@ export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
         </div>
       </button>
       <button
+        onClick={() => onNavigate('stats')}
         className="nav-icon-btn group"
         title="Stats"
         aria-label="Stats"
@@ -52,6 +53,7 @@ export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
         </div>
       </button>
       <button
+        onClick={() => onNavigate('profile')}
         className="nav-icon-btn group"
         title="Profile"
         aria-label="Profile"

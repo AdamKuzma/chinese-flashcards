@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFlashcardStore } from './store';
-import { Toast, HelpModal, Button, ImportModal, CreateDeckModal, DeckDetail, ReviewView, Nav } from './components';
+import { Toast, HelpModal, Button, ImportModal, CreateDeckModal, DeckDetail, ReviewView, Profile, Stats, Nav } from './components';
 import { dbOperations } from './database.ts';
 import type { Card, Deck } from './types';
 // import { ReviewQuality } from './types.ts';
@@ -37,9 +37,9 @@ function App() {
     setSelectedDeckId,
   } = useFlashcardStore();
 
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail' | 'profile' | 'stats'>(() => {
     const savedTab = localStorage.getItem('activeTab');
-    return (savedTab as 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail') || 'dashboard';
+    return (savedTab as 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail' | 'profile' | 'stats') || 'dashboard';
   });
   const [newCardForm, setNewCardForm] = useState({
     hanzi: '',
@@ -181,7 +181,7 @@ function App() {
     setShowToast(true);
   };
 
-  const handleTabChange = (tab: 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail') => {
+  const handleTabChange = (tab: 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail' | 'profile' | 'stats') => {
     setActiveTab(tab);
     localStorage.setItem('activeTab', tab);
   };
@@ -532,6 +532,14 @@ function App() {
               </form>
             </div>
             </>
+          )}
+
+          {activeTab === 'profile' && (
+            <Profile />
+          )}
+
+          {activeTab === 'stats' && (
+            <Stats />
           )}
         </div>
       </main>

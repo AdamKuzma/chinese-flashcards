@@ -1,5 +1,6 @@
 export * from './sm2';
 export * from './fsrsAdapter';
+export * from './audioCache';
 
 /**
  * Format time remaining until a card is due for review
