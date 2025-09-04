@@ -6,7 +6,6 @@ import Button from './Button';
 import { useFlashcardStore } from '../store';
 import SoundIcon from '../assets/Sound.svg';
 import BookIcon from '../assets/book.svg';
-import ShareIcon from '../assets/Share.svg';
 import RefreshIcon from '../assets/Refresh.svg';
 import BookmarkIcon from '../assets/Bookmark.svg';
 import { audioCache } from '../utils/audioCache';
