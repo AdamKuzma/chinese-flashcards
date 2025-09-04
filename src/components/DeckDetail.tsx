@@ -112,6 +112,24 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
           </div>
         </div>
         <div className="flex gap-3 items-start">
+          {/* Review Button */}
+          {deckCards.length > 0 && (
+            <Button
+              onClick={() => {
+                const prioritizedIds = useFlashcardStore.getState().getPrioritizedDueCards(deckId, 20);
+                if (prioritizedIds.length > 0) {
+                  useFlashcardStore.getState().startReviewWithCardIds(prioritizedIds);
+                  const evt = new CustomEvent('navigate-review');
+                  window.dispatchEvent(evt);
+                } else {
+                  onToast('No cards available for review');
+                }
+              }}
+              size="md"
+            >
+              Review
+            </Button>
+          )}
           
           <button
             onClick={() => setShowAddCard(true)}
@@ -231,12 +249,16 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
                           window.dispatchEvent(evt);
                         }}
                       >
-                        <div className={`w-full h-full rounded-2xl flex items-center justify-center relative overflow-hidden ${
-                          pct === 100 ? 'bg-[var(--color-complete)]' : 'bg-granite-custom'
-                        }`}>
+                        <div className="w-full h-full rounded-2xl flex items-center justify-center relative overflow-hidden bg-granite-custom">
                           <span className="text-2xl text-light-custom font-medium">{num}</span>
                           <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-progress-custom rounded-full" style={{ width: pct + '%' }} />
+                            <div 
+                              className="h-full rounded-full" 
+                              style={{ 
+                                width: pct + '%',
+                                backgroundColor: pct === 100 ? '#A0C700' : 'var(--color-progress)'
+                              }} 
+                            />
                           </div>
                         </div>
                       </button>

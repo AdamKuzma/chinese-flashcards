@@ -45,6 +45,7 @@ interface FlashcardStore {
   getNextCard: () => Card | null;
   getDueCards: (deckId?: string) => Card[];
   getAllCards: (deckId?: string) => Card[];
+  getPrioritizedDueCards: (deckId?: string, limit?: number) => string[];
   getTodaysReviewCount: () => number;
   // Session helpers
   getCurrentCard: () => Card | null;
@@ -405,6 +406,63 @@ export const useFlashcardStore = create<FlashcardStore>()(
         }
 
         return cardsToFilter;
+      },
+
+      getPrioritizedDueCards: (deckId, limit = 20) => {
+        const now = Date.now();
+        const allCards = get().cards.map((c) => normalizeFsrsFields(c));
+
+        let cardsToFilter = allCards;
+        if (deckId) {
+          const deck = get().getDeck(deckId);
+          cardsToFilter = deck ? allCards.filter(card => deck.cardIds.includes(card.id)) : [];
+        }
+
+        // Separate due cards from learned cards
+        const dueCards = cardsToFilter.filter((card) => card.due <= now && !card.suspended);
+        const learnedCards = cardsToFilter.filter((card) => card.due > now && !card.suspended);
+
+        // Combine and prioritize for consistent 20-card sessions
+        const allReviewableCards = [...dueCards, ...learnedCards];
+
+        // Prioritize by:
+        // 1. Due cards first (most overdue)
+        // 2. Then learned cards (closest to being due)
+        // 3. Within each group: higher difficulty, more lapses, learning state
+        return allReviewableCards
+          .sort((a, b) => {
+            const aIsDue = a.due <= now;
+            const bIsDue = b.due <= now;
+
+            // Due cards always come first
+            if (aIsDue !== bIsDue) {
+              return aIsDue ? -1 : 1;
+            }
+
+            if (aIsDue && bIsDue) {
+              // Both are due - most overdue first
+              if (a.due !== b.due) return a.due - b.due;
+            } else {
+              // Both are learned - closest to being due first
+              if (a.due !== b.due) return a.due - b.due;
+            }
+
+            // Within same due status, prioritize by difficulty
+            const aDiff = a.difficulty || 0;
+            const bDiff = b.difficulty || 0;
+            if (aDiff !== bDiff) return bDiff - aDiff;
+
+            // Then by lapses
+            if (a.lapses !== b.lapses) return b.lapses - a.lapses;
+
+            // Finally by learning state
+            const aState = a.fsrsState || 'Learning';
+            const bState = b.fsrsState || 'Learning';
+            const statePriority = { 'New': 4, 'Learning': 3, 'Relearning': 2, 'Review': 1 };
+            return (statePriority[bState] || 1) - (statePriority[aState] || 1);
+          })
+          .slice(0, limit)
+          .map(card => card.id);
       },
 
       getTodaysReviewCount: () => {
