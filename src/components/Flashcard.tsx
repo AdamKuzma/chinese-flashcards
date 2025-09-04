@@ -15,6 +15,7 @@ interface FlashcardProps {
   onNext?: () => void;
   onPrevious?: () => void;
   showNavigation?: boolean;
+  onFlipCard?: number;
 }
 
 export const Flashcard: React.FC<FlashcardProps> = ({
@@ -22,6 +23,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   isShowingAnswer,
   onShowAnswer,
   onReview,
+  onFlipCard,
 }) => {
   //const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -36,6 +38,19 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const { isReviewing, reviewAll } = useFlashcardStore();
 
   // No need for cleanup since we're using global audio cache
+
+  // Handle external card flip trigger
+  const handleExternalFlip = () => {
+    if (isShowingAnswer) {
+      setDisplayBack(prev => !prev);
+    }
+  };
+
+  useEffect(() => {
+    if (onFlipCard) {
+      handleExternalFlip();
+    }
+  }, [onFlipCard]);
 
   // When answer is revealed, start by showing the back; allow toggling back/forth thereafter
   useEffect(() => {
