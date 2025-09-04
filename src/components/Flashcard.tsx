@@ -9,6 +9,7 @@ import BookIcon from '../assets/book.svg';
 import RefreshIcon from '../assets/Refresh.svg';
 import BookmarkIcon from '../assets/Bookmark.svg';
 import { audioCache } from '../utils/audioCache';
+import { generateSentence } from '../utils/sentenceGenerator';
 
 interface FlashcardProps {
   card: Card;
@@ -376,27 +377,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({
                         
                         setIsLoadingSentence(true);
                         try {
-                          const response = await fetch('/api/sentence', {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                              hanzi: card.hanzi,
-                              english: card.english
-                            }),
-                          });
-
-                          if (response.ok) {
-                            const data = await response.json();
-                            setSentenceData(data);
-                          } else {
-                            // Fallback to mock data if API fails
-                            setSentenceData({
-                              chinese: `${card.hanzi}是一个很好的词。`,
-                              english: `${card.english} is a good word.`
-                            });
-                          }
+                          const data = await generateSentence(card.hanzi, card.english);
+                          setSentenceData(data);
                         } catch (error) {
                           console.error('Error regenerating sentence:', error);
                           // Fallback to mock data on error
@@ -435,27 +417,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({
                   
                   // Generate sentence using OpenAI API
                   try {
-                    const response = await fetch('/api/sentence', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        hanzi: card.hanzi,
-                        english: card.english
-                      }),
-                    });
-
-                    if (response.ok) {
-                      const data = await response.json();
-                      setSentenceData(data);
-                    } else {
-                      // Fallback to mock data if API fails
-                      setSentenceData({
-                        chinese: `${card.hanzi}是一个很好的词。`,
-                        english: `${card.english} is a good word.`
-                      });
-                    }
+                    const data = await generateSentence(card.hanzi, card.english);
+                    setSentenceData(data);
                   } catch (error) {
                     console.error('Error generating sentence:', error);
                     // Fallback to mock data on error
