@@ -7,6 +7,7 @@ export { ImportModal } from './ImportModal';
 export { CreateDeckModal } from './CreateDeckModal';
 export { DeckDetail } from './DeckDetail';
 export { Modal } from './Modal';
+export { DictationModal } from './DictationModal';
 export { AddCardModal } from './AddCardModal';
 export { EditDeckModal } from './EditDeckModal';
 export { EditCardModal } from './EditCardModal';

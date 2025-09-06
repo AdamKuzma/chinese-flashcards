@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { Card } from '../types.ts';
 import { ReviewQuality } from '../types.ts';
 //import { getCardDebugInfo } from '../utils';
 import Button from './Button';
+import { DictationModal } from './DictationModal';
 import { useFlashcardStore } from '../store';
 import SoundIcon from '../assets/Sound.svg';
 import BookIcon from '../assets/book.svg';
 import RefreshIcon from '../assets/Refresh.svg';
 import BookmarkIcon from '../assets/Bookmark.svg';
+import MicIcon from '../assets/Mic.svg';
 import { audioCache } from '../utils/audioCache';
 import { generateSentence } from '../utils/sentenceGenerator';
 
@@ -41,6 +43,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [sentenceData, setSentenceData] = useState<{chinese: string, english: string} | null>(null);
   const [isLoadingSentence, setIsLoadingSentence] = useState(false);
   const [isPlayingSentence, setIsPlayingSentence] = useState(false);
+  const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   // Get review session state from store
   const { isReviewing, reviewAll } = useFlashcardStore();
@@ -48,17 +51,17 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   // No need for cleanup since we're using global audio cache
 
   // Handle external card flip trigger
-  const handleExternalFlip = () => {
+  const handleExternalFlip = useCallback(() => {
     if (isShowingAnswer) {
       setDisplayBack(prev => !prev);
     }
-  };
+  }, [isShowingAnswer]);
 
   useEffect(() => {
     if (onFlipCard) {
       handleExternalFlip();
     }
-  }, [onFlipCard]);
+  }, [onFlipCard, handleExternalFlip]);
 
   // When answer is revealed, start by showing the back; allow toggling back/forth thereafter
   useEffect(() => {
@@ -404,8 +407,17 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             </div>
           )}
           
-          {/* Sentence Button */}
-          <div className="flex justify-center mt-4">
+          {/* Practice and Sentence Buttons */}
+          <div className="flex justify-center gap-1 mt-8">
+            <Button
+              onClick={() => setShowPracticeModal(true)}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5"
+            >
+              <img src={MicIcon} alt="Mic" className="w-5 h-5" />
+              Practice
+            </Button>
             <Button
               onClick={async () => {
                 if (showSentence) {
@@ -435,7 +447,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               variant="secondary"
               className="flex items-center gap-1.5"
             >
-              <img src={BookIcon} alt="Book" className="w-4 h-4" />
+              <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" />
               Sentence
             </Button>
           </div>
@@ -461,6 +473,13 @@ export const Flashcard: React.FC<FlashcardProps> = ({
           </button>
         </div>
       )} */}
+
+      {/* Practice Modal */}
+      <DictationModal
+        isOpen={showPracticeModal}
+        onClose={() => setShowPracticeModal(false)}
+        chineseWord={card.hanzi}
+      />
     </div>
   );
 };

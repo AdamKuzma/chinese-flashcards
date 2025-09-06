@@ -40,7 +40,7 @@ export async function generateSentence(hanzi: string, english: string): Promise<
       let sentenceData: SentenceData;
       try {
         sentenceData = JSON.parse(content || '{}');
-      } catch (parseError) {
+      } catch {
         // If JSON parsing fails, create a fallback response
         sentenceData = {
           chinese: `${hanzi}是一个很好的词。`,
