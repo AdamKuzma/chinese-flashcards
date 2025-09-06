@@ -4,7 +4,12 @@ import { Flashcard, Button, Modal } from './index';
 import { ReviewQuality } from '../types';
 import catImage from '../assets/cat.png';
 
-export const ReviewView: React.FC = () => {
+interface ReviewViewProps {
+  onBackToDeck?: () => void;
+  onCompletionStateChange?: (isShowingCompletion: boolean) => void;
+}
+
+export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompletionStateChange }) => {
   const [lastCompletedDeckId, setLastCompletedDeckId] = useState<string | null>(null);
   const [showQuitModal, setShowQuitModal] = useState(false);
   const [completedSessionCount, setCompletedSessionCount] = useState<number>(0);
@@ -26,6 +31,7 @@ export const ReviewView: React.FC = () => {
     sessionInitialCount,
     selectedDeckId,
     isShowingAnswer,
+    clearSession,
   } = useFlashcardStore();
 
   const currentCard = getCurrentCard();
@@ -48,12 +54,16 @@ export const ReviewView: React.FC = () => {
     }
   }, [sessionInitialCount]);
 
-  // Check if review session is completed
+  // Check if review session is completed - minimal dependencies
   useEffect(() => {
-    if (!isReviewing && completedSessionCount > 0 && total === 0) {
+    // Show completion when we're not reviewing but we had cards to review
+    if (!isReviewing && completedSessionCount > 0) {
       setShowCompletionState(true);
+      onCompletionStateChange?.(true);
     }
-  }, [isReviewing, completedSessionCount, total]);
+  }, [isReviewing, completedSessionCount, onCompletionStateChange]);
+
+  // Note: Session clearing is now handled explicitly when review completes or user navigates away
 
   
   // Keyboard shortcuts for review
@@ -134,14 +144,21 @@ export const ReviewView: React.FC = () => {
   const handleBackToDeck = () => {
     console.log('handleBackToDeck called');
     
+    // Clear the session when navigating back to deck
+    clearSession();
+    
     // Restore the deck ID so the deck detail view can display properly
     if (lastCompletedDeckId) {
       useFlashcardStore.getState().setSelectedDeckId(lastCompletedDeckId);
     }
     
-    // Navigate back to deck detail view
-    const evt = new CustomEvent('navigate-deck-detail');
-    window.dispatchEvent(evt);
+    // Use the callback if provided, otherwise fall back to custom event
+    if (onBackToDeck) {
+      onBackToDeck();
+    } else {
+      const evt = new CustomEvent('navigate-deck-detail');
+      window.dispatchEvent(evt);
+    }
     console.log('Navigate to deck detail event dispatched');
   };
 
@@ -230,10 +247,10 @@ export const ReviewView: React.FC = () => {
     );
   }
 
-  if (!isReviewing) {
-    // Not reviewing - don't show anything
-    console.log('ReviewView: Not reviewing, returning null');
-    console.log('Debug state:', { isReviewing, cardsToReviewLength: cardsToReview.length, currentCard: !!currentCard });
+  if (!isReviewing && !showCompletionState) {
+    // Not reviewing and not showing completion - don't show anything
+    console.log('ReviewView: Not reviewing and not showing completion, returning null');
+    console.log('Debug state:', { isReviewing, showCompletionState, cardsToReviewLength: cardsToReview.length, currentCard: !!currentCard });
     return null;
   }
 

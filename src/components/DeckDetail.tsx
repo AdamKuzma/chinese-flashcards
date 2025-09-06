@@ -16,13 +16,13 @@ import type { Deck } from '../types';
 
 interface DeckDetailProps {
   deckId: string;
-  onStartReview: (reviewAll: boolean) => void;
+  onStartLesson: (cardIds: string[]) => void;
   onAddCard: () => void;
   onDeleteDeck: () => void;
   onToast: (message: string) => void;
 }
 
-export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, onToast }) => {
+export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, onAddCard, onDeleteDeck, onToast }) => {
   const { getDeck, cards } = useFlashcardStore();
   const deck = getDeck(deckId);
   // deprecated with PopoverMenu, retained if needed elsewhere
@@ -118,9 +118,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
               onClick={() => {
                 const prioritizedIds = useFlashcardStore.getState().getPrioritizedDueCards(deckId, 20);
                 if (prioritizedIds.length > 0) {
-                  useFlashcardStore.getState().startReviewWithCardIds(prioritizedIds);
-                  const evt = new CustomEvent('navigate-review');
-                  window.dispatchEvent(evt);
+                  onStartLesson(prioritizedIds);
                 } else {
                   onToast('No cards available for review');
                 }
@@ -132,7 +130,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
           )}
           
           <button
-            onClick={() => setShowAddCard(true)}
+            onClick={onAddCard}
             className="deck-option-btn self-start"
             aria-label="Add cards"
             title="Add cards"
@@ -207,7 +205,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
       <div className="flex-1 pb-8 min-h-0 overflow-y-auto -mr-8 pr-8">
         {/* Tab content */}
         {activeTab === 'cards' ? (
-          <CardsGrid deckId={deckId} onToast={onToast} onOpenAddCard={() => setShowAddCard(true)} />
+          <CardsGrid deckId={deckId} onToast={onToast} onOpenAddCard={onAddCard} />
         ) : (
           (() => {
             const lessonSize = 10;
@@ -220,7 +218,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
               return (
                 <div className="py-8">
                   <p className="text-gray-custom mb-4">No cards in this deck yet. Add your first card.</p>
-                  <Button onClick={() => setShowAddCard(true)} size="sm">Add cards</Button>
+                  <Button onClick={onAddCard} size="sm">Add cards</Button>
                 </div>
               );
             }
@@ -244,9 +242,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onDeleteDeck, on
                         className="w-[160px] h-[190px]"
                         onClick={() => {
                           const ids = slice.map((c) => c.id);
-                          useFlashcardStore.getState().startReviewWithCardIds(ids);
-                          const evt = new CustomEvent('navigate-review');
-                          window.dispatchEvent(evt);
+                          onStartLesson(ids);
                         }}
                       >
                         <div className="w-full h-full rounded-2xl flex items-center justify-center relative overflow-hidden bg-granite-custom">

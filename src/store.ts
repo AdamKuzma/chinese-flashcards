@@ -19,6 +19,8 @@ interface FlashcardStore {
   isReviewing: boolean; // alias of sessionActive for UI compatibility
   selectedDeckId?: string;
   reviewAll?: boolean;
+  // Flip state for current card
+  currentCardFlipped: boolean;
 
   // Actions
   // Card management
@@ -39,8 +41,11 @@ interface FlashcardStore {
   startReview: (deckId?: string, reviewAll?: boolean) => void;
   startReviewWithCardIds: (cardIds: string[]) => void;
   stopReview: () => void;
+  clearSession: () => void;
   showAnswer: () => void;
   hideAnswer: () => void;
+  toggleCardFlip: () => void;
+  setCardFlip: (flipped: boolean) => void;
   reviewCard: (quality: ReviewQuality) => void;
   getNextCard: () => Card | null;
   getDueCards: (deckId?: string) => Card[];
@@ -134,6 +139,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       isReviewing: false,
       selectedDeckId: undefined,
       reviewAll: false,
+      currentCardFlipped: false,
       
 
       // Card management
@@ -300,6 +306,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           sessionInitialCount: ids.length,
           isShowingAnswer: false,
           reviewAll: reviewAll,
+          currentCardFlipped: false,
         });
       },
 
@@ -317,6 +324,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
           currentId: ids[0],
           sessionInitialCount: ids.length,
           isShowingAnswer: false,
+          currentCardFlipped: false,
         });
       },
 
@@ -330,6 +338,20 @@ export const useFlashcardStore = create<FlashcardStore>()(
           sessionInitialCount: 0,
           isShowingAnswer: false,
           reviewAll: false,
+          currentCardFlipped: false,
+        });
+      },
+
+      clearSession: () => {
+        set({
+          isReviewing: false,
+          sessionActive: false,
+          sessionQueue: [],
+          currentId: undefined,
+          sessionInitialCount: 0,
+          isShowingAnswer: false,
+          reviewAll: false,
+          currentCardFlipped: false,
         });
       },
 
@@ -339,6 +361,14 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
       hideAnswer: () => {
         set({ isShowingAnswer: false });
+      },
+
+      toggleCardFlip: () => {
+        set((state) => ({ currentCardFlipped: !state.currentCardFlipped }));
+      },
+
+      setCardFlip: (flipped) => {
+        set({ currentCardFlipped: flipped });
       },
 
       reviewCard: (quality) => {
@@ -373,9 +403,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
         const nextId = q[0];
         set({ sessionQueue: q, currentId: nextId, isShowingAnswer: false, isReviewing: !!nextId, sessionActive: !!nextId });
-        if (!nextId) {
-          get().stopReview();
-        }
+        // Don't call stopReview immediately when review completes - let the UI handle completion state
+        // The session will be cleared when the user navigates away from the completion screen
       },
 
       getNextCard: () => {
@@ -498,14 +527,14 @@ export const useFlashcardStore = create<FlashcardStore>()(
         const { sessionQueue, currentId } = get();
         const idx = currentId ? sessionQueue.indexOf(currentId) : -1;
         const nextId = idx >= 0 && idx + 1 < sessionQueue.length ? sessionQueue[idx + 1] : currentId;
-        set({ currentId: nextId, isShowingAnswer: false });
+        set({ currentId: nextId, isShowingAnswer: false, currentCardFlipped: false });
       },
 
       previousCard: () => {
         const { sessionQueue, currentId } = get();
         const idx = currentId ? sessionQueue.indexOf(currentId) : -1;
         const prevId = idx > 0 ? sessionQueue[idx - 1] : currentId;
-        set({ currentId: prevId, isShowingAnswer: false });
+        set({ currentId: prevId, isShowingAnswer: false, currentCardFlipped: false });
       },
 
       // Import/Export
@@ -540,6 +569,15 @@ export const useFlashcardStore = create<FlashcardStore>()(
         cards: state.cards,
         decks: state.decks,
         selectedDeckId: state.selectedDeckId,
+        // Persist session state
+        sessionActive: state.sessionActive,
+        sessionQueue: state.sessionQueue,
+        currentId: state.currentId,
+        sessionInitialCount: state.sessionInitialCount,
+        isShowingAnswer: state.isShowingAnswer,
+        isReviewing: state.isReviewing,
+        reviewAll: state.reviewAll,
+        currentCardFlipped: state.currentCardFlipped,
       }),
     }
   )

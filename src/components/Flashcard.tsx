@@ -46,16 +46,16 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   // Get review session state from store
-  const { isReviewing, reviewAll } = useFlashcardStore();
+  const { isReviewing, reviewAll, currentCardFlipped, toggleCardFlip, setCardFlip } = useFlashcardStore();
 
   // No need for cleanup since we're using global audio cache
 
   // Handle external card flip trigger
   const handleExternalFlip = useCallback(() => {
     if (isShowingAnswer) {
-      setDisplayBack(prev => !prev);
+      toggleCardFlip();
     }
-  }, [isShowingAnswer]);
+  }, [isShowingAnswer, toggleCardFlip]);
 
   useEffect(() => {
     if (onFlipCard) {
@@ -68,11 +68,14 @@ export const Flashcard: React.FC<FlashcardProps> = ({
     if (isTransitioning || lastCardId !== card.id) return; // Don't change displayBack during transitions or when card is changing
     // Only allow showing back if we're not in a transition and the card hasn't changed
     if (isShowingAnswer && !isTransitioning && lastCardId === card.id) {
+      // When answer is shown, always show the back side initially
       setDisplayBack(true);
+      setCardFlip(true); // Set flip state to true when answer is shown
     } else if (!isShowingAnswer && !isTransitioning && lastCardId === card.id) {
       setDisplayBack(false);
+      setCardFlip(false); // Reset flip state when answer is hidden
     }
-  }, [isShowingAnswer, isTransitioning, lastCardId, card.id]);
+  }, [isShowingAnswer, isTransitioning, lastCardId, card.id, setCardFlip]);
 
   // Additional safeguard: force front side during transitions
   useEffect(() => {
@@ -80,6 +83,13 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       setDisplayBack(false);
     }
   }, [isTransitioning]);
+
+  // Sync displayBack with currentCardFlipped when user manually toggles flip
+  useEffect(() => {
+    if (isShowingAnswer && !isTransitioning && lastCardId === card.id) {
+      setDisplayBack(currentCardFlipped);
+    }
+  }, [currentCardFlipped, isShowingAnswer, isTransitioning, lastCardId, card.id]);
 
   // On card change, run an X-axis enter animation (top -> bottom flip)
   useEffect(() => {
@@ -102,8 +112,9 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       setLastCardId(card.id);
       // Always reset to front side when card changes
       setDisplayBack(false);
+      setCardFlip(false); // Reset flip state in store
     }
-  }, [card.id, lastCardId]);
+  }, [card.id, lastCardId, setCardFlip]);
 
   // Only reset displayBack when starting a completely new review session
   useEffect(() => {
@@ -111,8 +122,9 @@ export const Flashcard: React.FC<FlashcardProps> = ({
     if (sessionId !== currentSessionId) {
       setSessionId(currentSessionId);
       setDisplayBack(false);
+      setCardFlip(false); // Reset flip state in store
     }
-  }, [isReviewing, reviewAll, sessionId]);
+  }, [isReviewing, reviewAll, sessionId, setCardFlip]);
 
   const playAudio = async () => {
     if (isPlaying) return;

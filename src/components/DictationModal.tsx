@@ -69,16 +69,27 @@ export const DictationModal: React.FC<DictationModalProps> = ({
       formData.append('language', 'zh'); // Chinese language
       formData.append('response_format', 'text');
 
+      const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      console.log('API Key exists:', !!apiKey);
+      console.log('API Key length:', apiKey ? apiKey.length : 0);
+      console.log('API Key starts with sk-:', apiKey ? apiKey.startsWith('sk-') : false);
+      console.log('Full API Key (first 10 chars):', apiKey ? apiKey.substring(0, 10) : 'undefined');
+      
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
         body: formData,
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`Transcription failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`Transcription failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const transcriptionText = await response.text();

@@ -1,21 +1,25 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import DecksIcon from '../assets/Decks.svg';
 import LibraryIcon from '../assets/library.svg';
 import StatsIcon from '../assets/Stats.svg';
 import ProfileIcon from '../assets/Profile.svg';
 
-type Tab = 'dashboard' | 'review' | 'browse' | 'add-card' | 'deck-detail' | 'profile' | 'stats';
+export const Nav: React.FC = () => {
+  const location = useLocation();
 
-interface NavProps {
-  onNavigate: (tab: Tab) => void;
-}
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
 
-export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
   return (
     <div className="nav-container flex items-center z-40">
-      <button
-        onClick={() => onNavigate('dashboard')}
-        className="nav-icon-btn group"
+      <Link
+        to="/"
+        className={`nav-icon-btn group ${isActive('/') ? 'active' : ''}`}
         title="Decks"
         aria-label="Decks"
       >
@@ -25,10 +29,10 @@ export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Decks
         </div>
-      </button>
-      <button
-        onClick={() => onNavigate('browse')}
-        className="nav-icon-btn group"
+      </Link>
+      <Link
+        to="/library"
+        className={`nav-icon-btn group ${isActive('/library') ? 'active' : ''}`}
         title="Library"
         aria-label="Library"
       >
@@ -38,10 +42,10 @@ export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Library
         </div>
-      </button>
-      <button
-        onClick={() => onNavigate('stats')}
-        className="nav-icon-btn group"
+      </Link>
+      <Link
+        to="/stats"
+        className={`nav-icon-btn group ${isActive('/stats') ? 'active' : ''}`}
         title="Stats"
         aria-label="Stats"
       >
@@ -51,10 +55,10 @@ export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Stats
         </div>
-      </button>
-      <button
-        onClick={() => onNavigate('profile')}
-        className="nav-icon-btn group"
+      </Link>
+      <Link
+        to="/profile"
+        className={`nav-icon-btn group ${isActive('/profile') ? 'active' : ''}`}
         title="Profile"
         aria-label="Profile"
       >
@@ -64,7 +68,7 @@ export const Nav: React.FC<NavProps> = ({ onNavigate }) => {
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Profile
         </div>
-      </button>
+      </Link>
     </div>
   );
 };
