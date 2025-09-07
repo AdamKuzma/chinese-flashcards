@@ -19,7 +19,7 @@ export async function generateSentence(hanzi: string, english: string): Promise<
   if (isDevelopment && client) {
     try {
       const response = await client.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
