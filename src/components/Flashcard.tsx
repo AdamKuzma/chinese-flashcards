@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { Card } from '../types.ts';
 import { ReviewQuality } from '../types.ts';
-//import { getCardDebugInfo } from '../utils';
+import { getCardDebugInfo } from '../utils';
 import Button from './Button';
 import { DictationModal } from './DictationModal';
 import { useFlashcardStore } from '../store';
@@ -31,9 +31,9 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   onReview,
   onFlipCard,
 }) => {
-  //const [showDebugInfo, setShowDebugInfo] = useState(false);
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  //const debugInfo = getCardDebugInfo(card);
+  const debugInfo = getCardDebugInfo(card);
   const [displayBack, setDisplayBack] = useState(false);
   const [enterRotationX, setEnterRotationX] = useState(0);
   const [lastCardId, setLastCardId] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   // Get review session state from store
-  const { isReviewing, reviewAll, currentCardFlipped, toggleCardFlip, setCardFlip } = useFlashcardStore();
+  const { isReviewing, reviewAll, currentCardFlipped, toggleCardFlip, setCardFlip, showAlgorithmDetails } = useFlashcardStore();
 
   // No need for cleanup since we're using global audio cache
 
@@ -429,16 +429,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
           
           {/* Practice and Sentence Buttons */}
           <div className="flex justify-center gap-1 mt-8">
-            <Button
-              onClick={() => setShowPracticeModal(true)}
-              size="sm"
-              variant="secondary"
-              className="flex items-center gap-1.5"
-            >
-              <img src={MicIcon} alt="Mic" className="w-5 h-5" />
-              Practice
-            </Button>
-            <Button
+          <Button
               onClick={async () => {
                 if (showSentence) {
                   setShowSentence(false);
@@ -470,6 +461,53 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" />
               Sentence
             </Button>
+            <Button
+              onClick={() => setShowPracticeModal(true)}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5"
+            >
+              <img src={MicIcon} alt="Mic" className="w-5 h-5" />
+              Practice
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Algorithm Details Link */}
+      {isShowingAnswer && showAlgorithmDetails && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => setShowDebugInfo(!showDebugInfo)}
+            className="text-sm text-gray-custom hover:text-light-custom transition-colors underline"
+          >
+            {showDebugInfo ? 'Hide' : 'Show'} algorithm details
+          </button>
+        </div>
+      )}
+
+      {/* Debug Info Display */}
+      {isShowingAnswer && showAlgorithmDetails && showDebugInfo && (
+        <div className="mt-4 p-4 bg-granite-custom/50 rounded-lg border border-granite-custom">
+          <div className="text-sm text-light-custom space-y-1">
+            <div><strong>Phase:</strong> {debugInfo.phase}</div>
+            <div><strong>Interval:</strong> {debugInfo.intervalDays} day{debugInfo.intervalDays !== 1 ? 's' : ''}</div>
+            <div><strong>Consecutive Correct:</strong> {debugInfo.consecutiveCorrect}</div>
+            <div><strong>Lapses:</strong> {debugInfo.lapses}</div>
+            <div><strong>Next Review:</strong> {debugInfo.nextReview}</div>
+            <div><strong>Exact Due Time:</strong> {debugInfo.exactDueTime}</div>
+            {debugInfo.stability !== undefined && (
+              <div><strong>Stability:</strong> {debugInfo.stability.toFixed(2)}</div>
+            )}
+            {debugInfo.difficulty !== undefined && (
+              <div><strong>Difficulty:</strong> {debugInfo.difficulty.toFixed(2)}</div>
+            )}
+            {debugInfo.fsrsState && (
+              <div><strong>FSRS State:</strong> {debugInfo.fsrsState}</div>
+            )}
+            {debugInfo.stepIndex !== undefined && (
+              <div><strong>Step Index:</strong> {debugInfo.stepIndex}</div>
+            )}
           </div>
         </div>
       )}

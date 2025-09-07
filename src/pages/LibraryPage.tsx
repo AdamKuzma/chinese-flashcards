@@ -70,6 +70,7 @@ export const LibraryPage: React.FC = () => {
 
   const handleDeleteCard = (cardId: string) => {
     useFlashcardStore.getState().deleteCard(cardId);
+    window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Card removed' }));
   };
 
   const handleStartEdit = (cardId: string, field: 'hanzi' | 'english', currentValue: string) => {

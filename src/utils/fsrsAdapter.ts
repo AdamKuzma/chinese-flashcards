@@ -85,7 +85,8 @@ export const applyFsrsResult = (card: AppCard, fsrsCard: FsrsCard, opts?: { sche
   const scheduledDays = opts?.scheduled_days ?? (card as AppCard & { fsrsScheduledDays?: number }).fsrsScheduledDays ?? 0;
   const learningSteps = opts?.learning_steps ?? (card as AppCard & { fsrsLearningSteps?: number }).fsrsLearningSteps ?? fsrsCard.learning_steps ?? 0;
 
-  const intervalDays = scheduledDays || Math.max(0, Math.round((nextDueMs - Date.now()) / 86_400_000));
+  // FIXED: Use scheduled_days from FSRS log, not calculated from current time
+  const intervalDays = scheduledDays;
 
   const updated: Partial<AppCard> & {
     stability?: number;
@@ -163,7 +164,8 @@ export const normalizeFsrsFields = (card: AppCard): AppCard => {
   if (!Number.isFinite(cardWithFsrs.stability)) normalized.stability = 0;
   if (!Number.isFinite(cardWithFsrs.difficulty)) normalized.difficulty = 0;
   if (!Number.isFinite(cardWithFsrs.fsrsLearningSteps)) normalized.fsrsLearningSteps = card.stepIndex != null ? Math.max(0, (card.stepIndex as number) + 1) : 0;
-  if (!Number.isFinite(cardWithFsrs.fsrsScheduledDays)) normalized.fsrsScheduledDays = Math.max(0, Math.round((card.due - Date.now()) / 86_400_000));
+  // FIXED: Don't recalculate fsrsScheduledDays based on current time - this was causing the overdue issue
+  if (!Number.isFinite(cardWithFsrs.fsrsScheduledDays)) normalized.fsrsScheduledDays = 0;
   if (!Number.isFinite(cardWithFsrs.fsrsElapsedDays)) normalized.fsrsElapsedDays = 0;
   if (cardWithFsrs.fsrsLastReview === undefined) normalized.fsrsLastReview = undefined;
   if (!cardWithFsrs.fsrsState) {
@@ -195,5 +197,3 @@ export const scheduleWithFsrs = (card: AppCard, quality: ReviewQuality, now = Da
 export const isLeechFsrs = (card: AppCard, threshold = 8) => {
   return (card.lapses ?? 0) >= threshold;
 };
-
-

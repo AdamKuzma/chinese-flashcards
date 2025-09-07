@@ -26,6 +26,7 @@ interface FlashcardStore {
   ttsSettings: {
     speakingRate: number; // 0.25 to 4.0, default 0.9
   };
+  showAlgorithmDetails: boolean;
 
   // Actions
   // Card management
@@ -73,6 +74,7 @@ interface FlashcardStore {
 
   // Settings management
   updateTtsSettings: (settings: Partial<{ speakingRate: number }>) => void;
+  updateShowAlgorithmDetails: (show: boolean) => void;
 }
 
 // SM-2 Algorithm is now handled in utils/sm2.ts
@@ -153,6 +155,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
       ttsSettings: {
         speakingRate: 0.9, // Default slightly slower for learning
       },
+      showAlgorithmDetails: false,
       
 
       // Card management
@@ -255,8 +258,17 @@ export const useFlashcardStore = create<FlashcardStore>()(
       },
 
       deleteDeck: (id) => {
+        const deck = get().getDeck(id);
+        if (!deck) return;
+
+        // Get all card IDs that belong to this deck
+        const cardIdsToDelete = deck.cardIds;
+
         set((state) => ({
+          // Remove the deck
           decks: state.decks.filter((deck) => deck.id !== id),
+          // Remove all cards that belonged to this deck
+          cards: state.cards.filter((card) => !cardIdsToDelete.includes(card.id)),
         }));
       },
 
@@ -584,6 +596,10 @@ export const useFlashcardStore = create<FlashcardStore>()(
           },
         }));
       },
+
+      updateShowAlgorithmDetails: (show) => {
+        set({ showAlgorithmDetails: show });
+      },
     }),
     {
       name: 'flashcard-storage',
@@ -602,6 +618,7 @@ export const useFlashcardStore = create<FlashcardStore>()(
         currentCardFlipped: state.currentCardFlipped,
         // Persist settings
         ttsSettings: state.ttsSettings,
+        showAlgorithmDetails: state.showAlgorithmDetails,
       }),
     }
   )

@@ -24,9 +24,9 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'font-medium rounded-lg transition-colors focus:outline-none';
   
   const variantClasses = {
-    primary: 'btn-add bg-granite-custom text-light-custom hover:bg-granite-custom hover:opacity-80',
-    secondary: 'text-silver-custom hover:opacity-80',
-    cancel: 'btn-cancel text-silver-custom hover:text-gray-custom'
+    primary: 'btn-add bg-granite-custom text-light-custom',
+    secondary: 'text-silver-custom',
+    cancel: 'btn-cancel text-silver-custom'
   };
   
   const sizeClasses = {
