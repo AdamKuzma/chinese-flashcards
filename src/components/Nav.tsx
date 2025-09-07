@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import DecksIcon from '../assets/Decks.svg';
+import DecksActiveIcon from '../assets/DecksActive.svg';
 import LibraryIcon from '../assets/library.svg';
+import LibraryActiveIcon from '../assets/LibraryActive.svg';
 import StatsIcon from '../assets/Stats.svg';
+import StatsActiveIcon from '../assets/StatsActive.svg';
 import ProfileIcon from '../assets/Profile.svg';
 
 export const Nav: React.FC = () => {
@@ -24,7 +27,7 @@ export const Nav: React.FC = () => {
         aria-label="Decks"
       >
         <div className="nav-icon-wrapper">
-          <img src={DecksIcon} alt="Decks" className="w-7 h-7" />
+          <img src={isActive('/') ? DecksActiveIcon : DecksIcon} alt="Decks" className="w-7 h-7" />
         </div>
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Decks
@@ -37,7 +40,7 @@ export const Nav: React.FC = () => {
         aria-label="Library"
       >
         <div className="nav-icon-wrapper">
-          <img src={LibraryIcon} alt="Library" className="w-7 h-7" />
+          <img src={isActive('/library') ? LibraryActiveIcon : LibraryIcon} alt="Library" className="w-7 h-7" />
         </div>
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Library
@@ -50,7 +53,7 @@ export const Nav: React.FC = () => {
         aria-label="Stats"
       >
         <div className="nav-icon-wrapper">
-          <img src={StatsIcon} alt="Stats" className="w-7 h-7" />
+          <img src={isActive('/stats') ? StatsActiveIcon : StatsIcon} alt="Stats" className="w-7 h-7" />
         </div>
         <div className="pointer-events-none absolute right-full px-2 py-1 rounded-lg bg-black/50 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
           Stats

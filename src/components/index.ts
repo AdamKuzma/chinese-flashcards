@@ -15,3 +15,4 @@ export { ReviewView } from './ReviewView';
 export { Profile } from './Profile';
 export { Stats } from './Stats';
 export { Nav } from './Nav';
+export { SearchBar } from './SearchBar';

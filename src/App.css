@@ -215,3 +215,13 @@
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }
+
+/* Column header hover effects */
+.column-header-button {
+  transition: all 0.2s ease;
+}
+
+.column-header-button:hover {
+  background-color: var(--color-granite);
+  color: var(--color-light);
+}
