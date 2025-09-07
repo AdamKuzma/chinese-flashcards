@@ -467,7 +467,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               variant="secondary"
               className="flex items-center gap-1.5"
             >
-              <img src={MicIcon} alt="Mic" className="w-5 h-5" />
+              <img src={MicIcon} alt="Mic" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
               Practice
             </Button>
           </div>

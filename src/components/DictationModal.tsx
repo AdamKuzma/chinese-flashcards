@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from './Modal';
-import MicIcon from '../assets/Mic.svg';
+import MicWaveform from './MicWaveform';
+import MicLightIcon from '../assets/MicLight.svg';
 import CheckIcon from '../assets/Check.svg';
 import CloseIcon from '../assets/Close.svg';
+import SpinnerIcon from '../assets/Spinner.svg';
+import { useFlashcardStore } from '../store';
 
 interface DictationModalProps {
   isOpen: boolean;
@@ -15,10 +18,14 @@ export const DictationModal: React.FC<DictationModalProps> = ({
   onClose,
   chineseWord,
 }) => {
+  const { setModalOpen } = useFlashcardStore();
   const [isRecording, setIsRecording] = useState(false);
   const [transcription, setTranscription] = useState<string>('');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isProcessingText, setIsProcessingText] = useState(false);
   const [wordCheckResult, setWordCheckResult] = useState<string>('');
+  const [isStartingRecording, setIsStartingRecording] = useState(false);
+  const [typedText, setTypedText] = useState('');
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -32,6 +39,12 @@ export const DictationModal: React.FC<DictationModalProps> = ({
       }
     };
   }, []);
+
+  // Update modal state in store
+  useEffect(() => {
+    console.log('DictationModal: Setting modal state to:', isOpen);
+    setModalOpen(isOpen);
+  }, [isOpen, setModalOpen]);
 
   // Reset state when modal closes
   useEffect(() => {
@@ -54,7 +67,10 @@ export const DictationModal: React.FC<DictationModalProps> = ({
       setIsRecording(false);
       setTranscription('');
       setIsTranscribing(false);
+      setIsProcessingText(false);
       setWordCheckResult('');
+      setIsStartingRecording(false);
+      setTypedText(''); // Reset text field
       audioChunksRef.current = [];
     }
   }, [isOpen, isRecording]);
@@ -129,9 +145,11 @@ export const DictationModal: React.FC<DictationModalProps> = ({
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
+      setIsStartingRecording(false);
 
     } catch (error) {
       console.error('Error starting recording:', error);
+      setIsStartingRecording(false);
     }
   };
 
@@ -190,7 +208,28 @@ export const DictationModal: React.FC<DictationModalProps> = ({
     setTranscription('');
     setIsTranscribing(false);
     setWordCheckResult('');
+    setIsStartingRecording(false);
+    setTypedText('');
     audioChunksRef.current = [];
+  };
+
+  const handleSubmitText = async () => {
+    if (!typedText.trim()) return;
+    
+    console.log('Setting isProcessingText to true');
+    setIsProcessingText(true);
+    setTranscription(typedText.trim()); // Show text immediately without highlighting
+    
+    // Simulate processing time and check if the text contains the target word
+    setTimeout(() => {
+      if (typedText.includes(chineseWord)) {
+        setWordCheckResult('Great! That\'s a natural sentence.');
+      } else {
+        setWordCheckResult(`You didn't use ${chineseWord} - want to try again?`);
+      }
+      console.log('Setting isProcessingText to false');
+      setIsProcessingText(false);
+    }, 2000); // 2 seconds processing time
   };
 
   const highlightWordInSentence = (sentence: string, word: string) => {
@@ -217,7 +256,7 @@ export const DictationModal: React.FC<DictationModalProps> = ({
           ✕
         </button>
         
-        <div className="text-center py-8">
+        <div className="text-center py-8 flex flex-col justify-center">
           <p className="text-md text-silver-custom mb-6">
             Try making your own sentence with:
           </p>
@@ -225,73 +264,108 @@ export const DictationModal: React.FC<DictationModalProps> = ({
             {chineseWord}
           </div>
           
-          {/* Transcription Result */}
-          {transcription && (
-            <div className="mb-6 p-4 bg-granite-custom/50 rounded-lg border border-granite-custom">
-              <p className="text-sm text-silver-custom mb-2">Transcription:</p>
-              <p 
-                className="text-lg text-light-custom"
-                dangerouslySetInnerHTML={{ 
-                  __html: highlightWordInSentence(transcription, chineseWord) 
-                }}
-              />
-              {wordCheckResult && (
-                <p className={`text-sm mt-2 ${wordCheckResult.includes('Great!') ? 'text-[#A0C700]' : 'text-yellow-400'}`}>
-                  {wordCheckResult}
-                </p>
-              )}
-            </div>
-          )}
           
-          {/* Transcribing indicator */}
-          {isTranscribing && (
-            <div className="mb-6 p-4 bg-granite-custom/50 rounded-lg border border-granite-custom">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-light-custom border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-silver-custom">Transcribing...</p>
-              </div>
-            </div>
-          )}
           
           {/* Recording Button */}
           <div className="flex justify-center">
-            {!isRecording ? (
-              <button
-                onClick={startRecording}
-                className="w-14 h-14 bg-granite-custom hover:bg-gray-custom rounded-full flex items-center justify-center transition-colors"
-              >
-                <img src={MicIcon} alt="Microphone" className="w-8 h-8" />
-              </button>
-            ) : (
-              <div className="w-[350px] h-14 bg-granite-custom rounded-full flex items-center justify-between px-4">
-                {/* Left side - Breathing circle */}
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-light-custom rounded-full animate-pulse" />
-                </div>
-                
-                {/* Center - Recording text */}
-                <div className="flex-1 flex items-center justify-center">
-                  <span className="text-silver-custom text-sm">Recording...</span>
-                </div>
-                
-                {/* Right side - Action buttons */}
-                <div className="flex items-center gap-1">
+            {!isRecording && !transcription && !isTranscribing && !isStartingRecording ? (
+              <div className="w-full max-w-md">
+                <div className="flex items-center gap-0 bg-granite-custom rounded-full px-1 h-12">
+                  <input
+                    type="text"
+                    value={typedText}
+                    onChange={(e) => setTypedText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSubmitText();
+                      }
+                    }}
+                    placeholder="Type or record..."
+                    className="flex-1 h-10 px-4 bg-transparent text-light-custom placeholder-silver-custom focus:outline-none"
+                  />
                   <button
-                    onClick={handleSaveRecording}
-                    className="w-8 h-8 flex items-center justify-center text-light-custom hover:bg-white/10 rounded-full transition-colors"
-                    title="Save recording"
+                    onClick={startRecording}
+                    disabled={isProcessingText}
+                    className="w-10 h-10 flex items-center justify-center text-light-custom hover:bg-white/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Record audio"
                   >
-                    <img src={CheckIcon} alt="Save" className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={handleCancelRecording}
-                    className="w-8 h-8 flex items-center justify-center text-light-custom hover:bg-white/10 rounded-full transition-colors"
-                    title="Cancel recording"
-                  >
-                    <img src={CloseIcon} alt="Cancel" className="w-5 h-5" />
+                    <img src={MicLightIcon} alt="Microphone" className="w-5.5 h-5.5" />
                   </button>
                 </div>
               </div>
+            ) : (
+              <div className="w-full max-w-md">
+                {/* Waveform/Transcription with buttons to the right */}
+                <div className="flex items-center gap-0 bg-granite-custom rounded-full px-1 h-12">
+                  <div className="flex-1">
+                    {transcription ? (
+                      <div className="h-12 flex items-center px-4">
+                        <p 
+                          className="text-md text-light-custom text-left"
+                          dangerouslySetInnerHTML={{ 
+                            __html: (isTranscribing || isProcessingText) ? transcription : highlightWordInSentence(transcription, chineseWord)
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <MicWaveform 
+                        height={48}
+                        width={330}
+                        smoothing={0.1}
+                        maxGain={1}
+                        barWidth={1.5}
+                        bg="#333333"
+                        barColor="#ddd"
+                        inactiveBarColor="#000000"
+                        speedPxPerSec={30}
+                        isAnimating={!isTranscribing}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-0">
+                    {!transcription && (
+                      <button
+                        onClick={handleCancelRecording}
+                        className="w-10 h-10 flex items-center justify-center text-light-custom hover:bg-white/10 rounded-full transition-colors"
+                        title="Cancel recording"
+                      >
+                        <img src={CloseIcon} alt="Cancel" className="w-6 h-6" />
+                      </button>
+                    )}
+                    <button
+                      onClick={transcription ? () => {
+                        setTranscription('');
+                        setWordCheckResult('');
+                        setTypedText('');
+                        setIsStartingRecording(true);
+                        startRecording();
+                      } : handleSaveRecording}
+                      disabled={isTranscribing}
+                      className="w-10 h-10 flex items-center justify-center text-light-custom hover:bg-white/10 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={isTranscribing ? "Transcribing..." : transcription ? "Record again" : "Save recording"}
+                    >
+                      {isTranscribing ? (
+                        <img src={SpinnerIcon} alt="Transcribing" className="w-6 h-6 animate-spin" />
+                      ) : transcription ? (
+                        <img src={MicLightIcon} alt="Record again" className="w-5.5 h-5.5" />
+                      ) : (
+                        <img src={CheckIcon} alt="Save" className="w-6 h-6" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Word Check Result - below container */}
+          <div className="mt-4 text-center h-5">
+            {transcription && wordCheckResult && (
+              <p className={`text-xs ${wordCheckResult.includes('Great!') ? 'text-[#A0C700]' : 'text-yellow-400'}`}>
+                {wordCheckResult}
+              </p>
             )}
           </div>
         </div>

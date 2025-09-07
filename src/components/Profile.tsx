@@ -115,6 +115,19 @@ export const Profile: React.FC = () => {
           Save
         </Button>
       </div>
+
+      {/* Test MicWaveform Link */}
+      <div className="mt-8 flex justify-start">
+        <button
+          onClick={() => {
+            // Navigate to a test page - you can create a proper route later
+            window.location.href = '/test-mic';
+          }}
+          className="text-sm text-silver-custom hover:text-light-custom underline"
+        >
+          Test MicWaveform Component
+        </button>
+      </div>
     </div>
   );
 };

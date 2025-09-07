@@ -32,6 +32,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
     selectedDeckId,
     isShowingAnswer,
     clearSession,
+    isAnyModalOpen,
   } = useFlashcardStore();
 
   const currentCard = getCurrentCard();
@@ -39,6 +40,9 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
   const dueCards = getDueCards();
   const allCards = getAllCards();
   const cardsToReview = reviewAll ? allCards : dueCards;
+
+  // Debug modal state
+  console.log('ReviewView: Modal state:', isAnyModalOpen);
 
   // Track the deck ID when a session is active
   useEffect(() => {
@@ -69,8 +73,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
   // Keyboard shortcuts for review
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only handle keyboard shortcuts when actively reviewing
-      if (!isReviewing || !currentCard) return;
+      console.log('Key pressed:', event.key, { isReviewing, currentCard: !!currentCard, isAnyModalOpen });
+      // Only handle keyboard shortcuts when actively reviewing and no modal is open
+      if (!isReviewing || !currentCard || isAnyModalOpen) {
+        console.log('Keyboard shortcut blocked:', { isReviewing, currentCard: !!currentCard, isAnyModalOpen });
+        return;
+      }
       
       // Prevent default behavior for our custom keys
       if (['Enter', '1', '2', '3', '4'].includes(event.key)) {
@@ -136,7 +144,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isReviewing, currentCard, isShowingAnswer, showAnswer, hideAnswer, reviewCard, setFlipCardTrigger]);
+  }, [isReviewing, currentCard, isShowingAnswer, showAnswer, hideAnswer, reviewCard, setFlipCardTrigger, isAnyModalOpen]);
 
   // Use the last known deck ID if selectedDeckId is not available
   const effectiveDeckId = selectedDeckId || lastCompletedDeckId;

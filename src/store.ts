@@ -27,6 +27,9 @@ interface FlashcardStore {
     speakingRate: number; // 0.25 to 4.0, default 0.9
   };
   showAlgorithmDetails: boolean;
+  
+  // Modal state
+  isAnyModalOpen: boolean;
 
   // Actions
   // Card management
@@ -55,6 +58,9 @@ interface FlashcardStore {
   reviewCard: (quality: ReviewQuality) => void;
   getNextCard: () => Card | null;
   getDueCards: (deckId?: string) => Card[];
+  
+  // Modal management
+  setModalOpen: (isOpen: boolean) => void;
   getAllCards: (deckId?: string) => Card[];
   getPrioritizedDueCards: (deckId?: string, limit?: number) => string[];
   getTodaysReviewCount: () => number;
@@ -156,6 +162,9 @@ export const useFlashcardStore = create<FlashcardStore>()(
         speakingRate: 0.9, // Default slightly slower for learning
       },
       showAlgorithmDetails: false,
+      
+      // Modal state
+      isAnyModalOpen: false,
       
 
       // Card management
@@ -599,6 +608,11 @@ export const useFlashcardStore = create<FlashcardStore>()(
 
       updateShowAlgorithmDetails: (show) => {
         set({ showAlgorithmDetails: show });
+      },
+
+      setModalOpen: (isOpen) => {
+        console.log('Store: Setting modal state to:', isOpen);
+        set({ isAnyModalOpen: isOpen });
       },
     }),
     {

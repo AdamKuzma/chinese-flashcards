@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useFlashcardStore } from './store';
 import { Toast, ImportModal, CreateDeckModal, Nav } from './components';
 import { DecksPage, LibraryPage, StatsPage, ProfilePage, ReviewPage, DeckDetailPage } from './pages';
+import { MicTestPage } from './pages/MicTestPage';
 import { dbOperations } from './database.ts';
 import type { Card, Deck } from './types';
 import './App.css';
@@ -102,6 +103,7 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/review" element={<ReviewPage />} />
                 <Route path="/deck/:deckId" element={<DeckDetailPage />} />
+                <Route path="/test-mic" element={<MicTestPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
