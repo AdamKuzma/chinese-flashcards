@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { text } = req.body;
+    const { text, speakingRate = 0.9 } = req.body;
 
     if (!text) {
       return res.status(400).json({ error: 'Text is required' });
@@ -50,7 +50,7 @@ export default async function handler(req, res) {
       },
       audioConfig: {
         audioEncoding: 'MP3',
-        speakingRate: 0.9, // Slightly slower for learning
+        speakingRate: Math.max(0.25, Math.min(4.0, speakingRate)), // Clamp between 0.25 and 4.0
         pitch: 0.0,
         volumeGainDb: 0.0,
       },

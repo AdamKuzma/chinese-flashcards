@@ -129,8 +129,10 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const playAudio = async () => {
     if (isPlaying) return;
     
-    // Check cache first - if we have this character cached, try to play it
-    const cachedUrl = audioCache.get(card.hanzi);
+    // Check cache first - if we have this character cached at this speed, try to play it
+    const currentSpeed = useFlashcardStore.getState().ttsSettings.speakingRate;
+    const cacheKey = `${card.hanzi}_${currentSpeed}`;
+    const cachedUrl = audioCache.get(cacheKey);
     if (cachedUrl) {
       const audio = new Audio(cachedUrl);
       setIsPlaying(true);
@@ -143,7 +145,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         setIsPlaying(false);
         console.error('Error playing cached audio, will refetch');
         // Remove the invalid URL from cache and refetch
-        audioCache.delete(card.hanzi);
+        audioCache.delete(cacheKey);
         // Retry by calling playAudio again
         setTimeout(() => playAudio(), 100);
         return;
@@ -156,7 +158,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         setIsPlaying(false);
         console.error('Error playing cached audio, will refetch:', error);
         // Remove the invalid URL from cache and refetch
-        audioCache.delete(card.hanzi);
+        audioCache.delete(cacheKey);
         // Retry by calling playAudio again
         setTimeout(() => playAudio(), 100);
         return;
@@ -172,15 +174,18 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: card.hanzi }),
+        body: JSON.stringify({ 
+          text: card.hanzi,
+          speakingRate: useFlashcardStore.getState().ttsSettings.speakingRate
+        }),
       });
 
       if (response.ok) {
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
         
-        // Cache the audio URL for future use
-        audioCache.set(card.hanzi, audioUrl);
+        // Cache the audio URL for future use with speed-specific key
+        audioCache.set(cacheKey, audioUrl);
         
         const audio = new Audio(audioUrl);
         
@@ -214,7 +219,10 @@ export const Flashcard: React.FC<FlashcardProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ text: sentenceData.chinese }),
+        body: JSON.stringify({ 
+          text: sentenceData.chinese,
+          speakingRate: useFlashcardStore.getState().ttsSettings.speakingRate
+        }),
       });
 
       if (response.ok) {

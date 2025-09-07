@@ -22,6 +22,11 @@ interface FlashcardStore {
   // Flip state for current card
   currentCardFlipped: boolean;
 
+  // Settings
+  ttsSettings: {
+    speakingRate: number; // 0.25 to 4.0, default 0.9
+  };
+
   // Actions
   // Card management
   addCard: (card: Omit<Card, 'id' | 'createdAt' | 'updatedAt' | 'ef' | 'intervalDays' | 'reps' | 'lapses' | 'due' | 'phase' | 'stepIndex' | 'suspended'>) => string;
@@ -65,6 +70,9 @@ interface FlashcardStore {
   // Import/Export
   exportData: () => void;
   importData: (data: { cards: Card[]; decks: Deck[] }) => void;
+
+  // Settings management
+  updateTtsSettings: (settings: Partial<{ speakingRate: number }>) => void;
 }
 
 // SM-2 Algorithm is now handled in utils/sm2.ts
@@ -140,6 +148,11 @@ export const useFlashcardStore = create<FlashcardStore>()(
       selectedDeckId: undefined,
       reviewAll: false,
       currentCardFlipped: false,
+
+      // Settings
+      ttsSettings: {
+        speakingRate: 0.9, // Default slightly slower for learning
+      },
       
 
       // Card management
@@ -562,6 +575,15 @@ export const useFlashcardStore = create<FlashcardStore>()(
           console.error('Error importing data:', error);
         }
       },
+
+      updateTtsSettings: (settings) => {
+        set((state) => ({
+          ttsSettings: {
+            ...state.ttsSettings,
+            ...settings,
+          },
+        }));
+      },
     }),
     {
       name: 'flashcard-storage',
@@ -578,6 +600,8 @@ export const useFlashcardStore = create<FlashcardStore>()(
         isReviewing: state.isReviewing,
         reviewAll: state.reviewAll,
         currentCardFlipped: state.currentCardFlipped,
+        // Persist settings
+        ttsSettings: state.ttsSettings,
       }),
     }
   )
