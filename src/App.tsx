@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useFlashcardStore } from './store';
-import { Toast, HelpModal, ImportModal, CreateDeckModal, Nav } from './components';
-import { DecksPage, LibraryPage, StatsPage, ProfilePage, ReviewPage, DeckDetailPage, AddCardPage } from './pages';
+import { Toast, ImportModal, CreateDeckModal, Nav } from './components';
+import { DecksPage, LibraryPage, StatsPage, ProfilePage, ReviewPage, DeckDetailPage } from './pages';
 import { dbOperations } from './database.ts';
 import type { Card, Deck } from './types';
 import './App.css';
@@ -11,7 +11,6 @@ function App() {
   const { importData } = useFlashcardStore();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showCreateDeck, setShowCreateDeck] = useState(false);
 
@@ -103,7 +102,6 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/review" element={<ReviewPage />} />
                 <Route path="/deck/:deckId" element={<DeckDetailPage />} />
-                <Route path="/add-card" element={<AddCardPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
@@ -116,15 +114,6 @@ function App() {
             onHide={hideToast}
           />
 
-          {/* Help Button - Fixed position at bottom right */}
-          <button
-            onClick={() => setShowHelpModal(true)}
-            className="fixed bottom-6 right-6 w-8 h-8 bg-granite-custom hover:bg-gray-600 text-light-custom rounded-full shadow-lg flex items-center justify-center transition-colors z-40"
-            aria-label="Help"
-            title="Help & Documentation"
-          >
-            <span className="text-md font-medium">?</span>
-          </button>
 
           {/* Import Modal */}
           <ImportModal 
@@ -145,11 +134,6 @@ function App() {
             }}
           />
 
-          {/* Help Modal */}
-          <HelpModal 
-            isOpen={showHelpModal}
-            onClose={() => setShowHelpModal(false)}
-          />
         </div>
       </div>
     </Router>

@@ -59,7 +59,6 @@
 .deck-option-btn:hover {
   background-color: #333333;
   color: #EEEEEE;
-  transform: scale(1.05);
 }
 
 /* Nav icon hover effects */
@@ -224,4 +223,13 @@
 .column-header-button:hover {
   background-color: var(--color-granite);
   color: var(--color-light);
+}
+
+/* Add cards button hover effect */
+.add-cards-btn:hover .add-cards-icon {
+  filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
+}
+
+.add-cards-btn:hover {
+  background-color: var(--color-granite);
 }

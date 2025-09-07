@@ -5,11 +5,7 @@ import { AddCardModal } from './AddCardModal';
 import { EditDeckModal } from './EditDeckModal';
 import { EditCardModal } from './EditCardModal';
 import { PopoverMenu } from './PopoverMenu';
-import ShareIcon from '../assets/Share.svg';
 import PlusIcon from '../assets/Plus.svg';
-import LockIcon from '../assets/Lock.svg';
-import ClockIcon from '../assets/Clock.svg';
-import FlowerIcon from '../assets/Flower.png';
 import { ImportModal } from './ImportModal';
 import type { Card } from '../types';
 import type { Deck } from '../types';
@@ -17,12 +13,11 @@ import type { Deck } from '../types';
 interface DeckDetailProps {
   deckId: string;
   onStartLesson: (cardIds: string[]) => void;
-  onAddCard: () => void;
   onDeleteDeck: () => void;
   onToast: (message: string) => void;
 }
 
-export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, onAddCard, onDeleteDeck, onToast }) => {
+export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, onDeleteDeck, onToast }) => {
   const { getDeck, cards } = useFlashcardStore();
   const deck = getDeck(deckId);
   // deprecated with PopoverMenu, retained if needed elsewhere
@@ -39,19 +34,6 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
   }
 
   const deckCards = cards.filter((c) => deck.cardIds.includes(c.id));
-  const now = Date.now();
-  const newCount = deckCards.filter((c) => {
-    const card = c as Card & { fsrsState?: string };
-    return card.fsrsState === 'New' || (!('fsrsState' in card) && c.reps === 0);
-  }).length;
-  const dueCount = deckCards.filter((c) => {
-    const card = c as Card & { fsrsState?: string };
-    return c.due <= now && !c.suspended && (card.fsrsState !== 'New' && ('fsrsState' in card || c.reps > 0));
-  }).length;
-  const learnedCount = deckCards.filter((c) => {
-    const card = c as Card & { fsrsState?: string };
-    return (card.fsrsState === 'Review' || card.fsrsState === 'Relearning') && c.due > now;
-  }).length;
 
   const handleExportDeck = () => {
     try {
@@ -77,38 +59,22 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
     <div className="mt-[-4px] relative h-full min-h-0 flex flex-col">
       <div className="flex justify-between items-start mb-8">
         <div className="flex items-center gap-6">
-          <div className="w-[64px] h-[76px] bg-granite-custom rounded-lg overflow-hidden flex-shrink-0">
-            {deck.image && (
-              <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
-            )}
+          <div 
+            className="relative w-[64px] h-[76px] flex-shrink-0 group cursor-pointer"
+            onClick={() => setShowEditDeck(true)}
+          >
+            <div className="absolute inset-0 bg-granite-custom rounded-lg -z-10 transition-transform rotate-[2deg] group-hover:rotate-[4deg]" />
+            <div className="relative w-full h-full bg-granite-custom rounded-lg transition-transform transition-colors overflow-hidden flex items-center justify-center rotate-[-4deg] group-hover:rotate-[-6deg] group-hover:scale-102 group-hover:bg-granite-custom/80">
+              {deck.image ? (
+                <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
+              ) : null}
+            </div>
           </div>
           <div>
             <h2 className="text-left text-lg">{deck.name}</h2>
-            <div className="text-sm text-left text-silver-custom mt-2 flex items-center gap-2.5">
-              <span className="flex items-center gap-1 relative group cursor-default">
-                <img src={LockIcon} alt="New" className="w-4 h-4" />
-                {newCount}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  New
-                </div>
-              </span>
-              <span className="text-granite-custom cursor-default">|</span>
-              <span className="flex items-center gap-1 relative group cursor-default">
-                <img src={ClockIcon} alt="Due" className="w-4 h-4" />
-                {dueCount}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  Due
-                </div>
-              </span>
-              <span className="text-granite-custom cursor-default">|</span>
-              <span className="flex items-center gap-1 relative group cursor-default">
-                <img src={FlowerIcon} alt="Learned" className="w-4.5 h-4.5 rotate-180" />
-                {learnedCount}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black/20 text-light-custom text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                  Learned
-                </div>
-              </span>
-            </div>
+            {deck.description && (
+              <p className="text-left text-sm text-gray-custom mt-1">{deck.description}</p>
+            )}
           </div>
         </div>
         <div className="flex gap-3 items-start">
@@ -130,31 +96,13 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
           )}
           
           <button
-            onClick={onAddCard}
-            className="deck-option-btn self-start"
+            onClick={() => setShowAddCard(true)}
+            className="deck-option-btn self-start add-cards-btn"
             aria-label="Add cards"
             title="Add cards"
           >
-            <img src={PlusIcon} alt="Add cards" className="w-4 h-4" />
+            <img src={PlusIcon} alt="Add cards" className="w-4 h-4 add-cards-icon" />
           </button>
-          <PopoverMenu
-            placement="bottom-right"
-            trigger={({ onClick, ref }) => (
-              <button
-                onClick={onClick}
-                ref={ref as React.RefObject<HTMLButtonElement>}
-                className="deck-option-btn self-start"
-                aria-label="Share options"
-                title="Share options"
-              >
-                <img src={ShareIcon} alt="Share" className="w-4 h-4" />
-              </button>
-            )}
-            actions={[
-              { key: 'export', label: 'Export deck', onClick: () => handleExportDeck() },
-              { key: 'import', label: 'Import cards', onClick: () => setShowImportModal(true) },
-            ]}
-          />
           <PopoverMenu
             placement="bottom-right"
             trigger={({ onClick, ref }) => (
@@ -170,6 +118,8 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
             )}
             actions={[
               { key: 'edit', label: 'Edit deck', onClick: () => setShowEditDeck(true) },
+              { key: 'export', label: 'Export deck', onClick: () => handleExportDeck() },
+              { key: 'import', label: 'Import cards', onClick: () => setShowImportModal(true) },
               { key: 'delete', label: 'Delete deck', onClick: () => onDeleteDeck(), className: 'text-red-300' },
             ]}
           />
@@ -177,10 +127,10 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-granite-custom -mx-8 px-8">
-        <nav className="flex">
+      <div className="border-b border-granite-custom">
+        <nav className="flex gap-2">
           <button
-            className={`py-2 text-md w-[142px] border-b-2 transition-colors duration-200 ${
+            className={`py-2 text-md w-[130px] border-b-2 transition-colors duration-200 ${
               activeTab === 'lessons' 
                 ? 'text-light-custom border-light-custom' 
                 : 'text-gray-custom border-transparent hover:opacity-80'
@@ -190,7 +140,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
             Lessons
           </button>
           <button
-            className={`py-2 w-[142px] border-b-2 transition-colors duration-200 ${
+            className={`py-2.5 w-[130px] border-b-2 transition-colors duration-200 ${
               activeTab === 'cards' 
                 ? 'text-light-custom border-light-custom' 
                 : 'text-gray-custom border-transparent hover:opacity-80'
@@ -205,7 +155,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
       <div className="flex-1 pb-8 min-h-0 overflow-y-auto -mr-8 pr-8">
         {/* Tab content */}
         {activeTab === 'cards' ? (
-          <CardsGrid deckId={deckId} onToast={onToast} onOpenAddCard={onAddCard} />
+          <CardsGrid deckId={deckId} onToast={onToast} onOpenAddCard={() => setShowAddCard(true)} />
         ) : (
           (() => {
             const lessonSize = 10;
@@ -218,7 +168,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
               return (
                 <div className="py-8">
                   <p className="text-gray-custom mb-4">No cards in this deck yet. Add your first card.</p>
-                  <Button onClick={onAddCard} size="sm">Add cards</Button>
+                  <Button onClick={() => setShowAddCard(true)} size="sm">Add cards</Button>
                 </div>
               );
             }

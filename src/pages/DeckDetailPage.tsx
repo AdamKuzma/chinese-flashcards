@@ -26,9 +26,6 @@ export const DeckDetailPage: React.FC = () => {
         useFlashcardStore.getState().startReviewWithCardIds(cardIds);
         navigate('/review');
       }}
-      onAddCard={() => {
-        navigate('/add-card');
-      }}
       onDeleteDeck={() => {
         useFlashcardStore.getState().deleteDeck(deckId!);
         navigate('/');
