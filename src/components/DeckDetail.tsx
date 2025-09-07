@@ -6,6 +6,7 @@ import { EditDeckModal } from './EditDeckModal';
 import { EditCardModal } from './EditCardModal';
 import { PopoverMenu } from './PopoverMenu';
 import PlusIcon from '../assets/Plus.svg';
+import LockIcon from '../assets/Lock.svg';
 import { ImportModal } from './ImportModal';
 import type { Card } from '../types';
 import type { Deck } from '../types';
@@ -152,7 +153,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
         </nav>
       </div>
 
-      <div className="flex-1 pb-8 min-h-0 overflow-y-auto -mr-8 pr-8">
+      <div className="flex-1 pb-8 min-h-0 !overflow-y-auto overflow-x-visible -mr-8 pr-8">
         {/* Tab content */}
         {activeTab === 'cards' ? (
           <CardsGrid deckId={deckId} onToast={onToast} onOpenAddCard={() => setShowAddCard(true)} />
@@ -173,8 +174,9 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
               );
             }
             return (
-              <div className="mt-8 grid grid-cols-4 gap-6 deck-detail-grid">
-                {lessons.map(({ num }) => {
+              <div className="mt-8 -mx-8 px-8">
+                <div className="grid grid-cols-4 gap-6 deck-detail-grid">
+                  {lessons.map(({ num }) => {
                   const start = (num - 1) * lessonSize;
                   const end = start + lessonSize;
                   const slice = deckCards.slice(start, end);
@@ -186,31 +188,51 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
                   const total = slice.length || 1;
                   const pct = Math.max(0, Math.min(100, Math.round((learned / total) * 100)));
 
+                  // Determine if lesson is locked
+                  const isLocked = num > 1 && lessons.some(({ num: prevNum }) => {
+                    if (prevNum >= num) return false;
+                    const prevStart = (prevNum - 1) * lessonSize;
+                    const prevEnd = prevStart + lessonSize;
+                    const prevSlice = deckCards.slice(prevStart, prevEnd);
+                    const prevReviewed = prevSlice.filter((c) => c.reps > 0).length;
+                    return prevReviewed < prevSlice.length;
+                  });
+
                   return (
                     <div key={num} className="relative">
                       <button
-                        className="w-[160px] h-[190px]"
+                        className="w-[160px] h-[190px] transition-transform duration-200 hover:scale-[1.02] disabled:hover:scale-100"
                         onClick={() => {
-                          const ids = slice.map((c) => c.id);
-                          onStartLesson(ids);
+                          if (!isLocked) {
+                            const ids = slice.map((c) => c.id);
+                            onStartLesson(ids);
+                          }
                         }}
+                        disabled={isLocked}
                       >
-                        <div className="w-full h-full rounded-2xl flex items-center justify-center relative overflow-hidden bg-granite-custom">
-                          <span className="text-2xl text-light-custom font-medium">{num}</span>
-                          <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full rounded-full" 
-                              style={{ 
-                                width: pct + '%',
-                                backgroundColor: pct === 100 ? '#A0C700' : 'var(--color-progress)'
-                              }} 
-                            />
-                          </div>
+                        <div className={`w-full h-full rounded-2xl flex items-center justify-center relative overflow-hidden ${isLocked ? 'bg-granite-custom opacity-50 cursor-default' : 'bg-granite-custom'}`}>
+                          {isLocked ? (
+                            <img src={LockIcon} alt="Locked" className="w-10 h-10 text-gray-custom" />
+                          ) : (
+                            <span className="text-2xl text-light-custom font-medium">{num}</span>
+                          )}
+                          {!isLocked && (
+                            <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full" 
+                                style={{ 
+                                  width: pct + '%',
+                                  backgroundColor: pct === 100 ? '#A0C700' : 'var(--color-progress)'
+                                }} 
+                              />
+                            </div>
+                          )}
                         </div>
                       </button>
                     </div>
                   );
-                })}
+                  })}
+                </div>
               </div>
             );
           })()
@@ -331,8 +353,9 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
   };
 
   return (
-    <div className="mt-8 grid grid-cols-4 gap-6 deck-detail-grid">
-      {deckCards.map((card) => {
+    <div className="mt-8 -mx-8 px-8">
+      <div className="grid grid-cols-4 gap-6 deck-detail-grid">
+        {deckCards.map((card) => {
         const isFlipped = flipped.has(card.id);
         return (
           <div key={card.id} className="relative group h-[190px]">
@@ -391,7 +414,8 @@ const CardsGrid: React.FC<{ deckId: string; onToast: (m: string) => void; onOpen
             )}
           </div>
         );
-      })}
+        })}
+      </div>
     </div>
   );
 };
