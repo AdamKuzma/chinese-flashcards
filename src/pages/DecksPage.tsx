@@ -40,19 +40,20 @@ export const DecksPage: React.FC<DecksPageProps> = ({ onCreateDeck }) => {
         ) : (
           <div className="mt-6 grid grid-cols-1 place-items-center gap-6 decks-grid-3">
             {decks.map((deck, idx) => (
-              <button
-                key={deck.id}
-                className="text-left group"
-                onClick={() => handleDeckClick(deck.id)}
-              >
-                <div className="relative w-[164px] h-[196px]">
-                  <div className={`absolute inset-0 bg-granite-custom rounded-2xl -z-10 transition-transform ${idx % 2 === 0 ? 'rotate-[2deg] group-hover:rotate-[4deg]' : 'rotate-[-2deg] group-hover:rotate-[-4deg]'}`} />
-                  <div className={`relative w-full h-full bg-granite-custom rounded-2xl transition-transform transition-colors overflow-hidden flex items-center justify-center ${idx % 2 === 0 ? 'rotate-[-4deg] group-hover:rotate-[-6deg]' : 'rotate-[4deg] group-hover:rotate-[6deg]'} group-hover:scale-102 group-hover:bg-granite-custom/80`}>
-                    {deck.image ? (
-                      <img src={deck.image} alt="Deck" className="w-full h-full object-cover" />
-                    ) : null}
+              <div key={deck.id} className="text-left">
+                <button
+                  className="deck-card-btn group"
+                  onClick={() => handleDeckClick(deck.id)}
+                >
+                  <div className="relative w-[164px] h-[196px]">
+                    <div className={`absolute inset-0 bg-granite-custom rounded-2xl -z-10 transition-transform ${idx % 2 === 0 ? 'rotate-[2deg] group-hover:rotate-[4deg]' : 'rotate-[-2deg] group-hover:rotate-[-4deg]'}`} />
+                    <div className={`relative w-full h-full bg-granite-custom rounded-2xl transition-transform transition-colors overflow-hidden flex items-center justify-center ${idx % 2 === 0 ? 'rotate-[-4deg] group-hover:rotate-[-6deg]' : 'rotate-[4deg] group-hover:rotate-[6deg]'} group-hover:scale-102 group-hover:bg-granite-custom/80`}>
+                      {deck.image ? (
+                        <img src={deck.image} alt="Deck" className="w-full h-full object-cover" draggable="false" />
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+                </button>
                 <div className="mt-6 text-silver-custom text-sm truncate w-[164px] text-center">
                   <div>{deck.name}</div>
                   <div className="mt-1.5 text-gray-custom text-xs flex items-center justify-center">
@@ -60,7 +61,7 @@ export const DecksPage: React.FC<DecksPageProps> = ({ onCreateDeck }) => {
                     {cards.filter(card => deck.cardIds.includes(card.id)).length}
                   </div>
                 </div>
-              </button>
+              </div>
             ))}
             <button
               onClick={handleCreateDeck}

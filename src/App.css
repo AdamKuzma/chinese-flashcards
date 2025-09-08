@@ -89,6 +89,17 @@
   align-items: center;
   justify-content: center;
   background-color: transparent;
+  transition: transform 0.1s ease-in-out;
+}
+
+.nav-icon-btn:active .nav-icon-wrapper {
+  transform: scale(0.94);
+}
+
+/* Deck card press effect */
+.deck-card-btn:active .relative {
+  transform: scale(0.99);
+  transition: transform 0.2s ease-in-out;
 }
 
 /* Tooltip transitions */
