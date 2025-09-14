@@ -46,10 +46,24 @@ export const DecksPage: React.FC<DecksPageProps> = ({ onCreateDeck }) => {
                   onClick={() => handleDeckClick(deck.id)}
                 >
                   <div className="relative w-[164px] h-[196px]">
-                    <div className={`absolute inset-0 bg-granite-custom rounded-2xl -z-10 transition-transform ${idx % 2 === 0 ? 'rotate-[2deg] group-hover:rotate-[4deg]' : 'rotate-[-2deg] group-hover:rotate-[-4deg]'}`} />
-                    <div className={`relative w-full h-full bg-granite-custom rounded-2xl transition-transform transition-colors overflow-hidden flex items-center justify-center ${idx % 2 === 0 ? 'rotate-[-4deg] group-hover:rotate-[-6deg]' : 'rotate-[4deg] group-hover:rotate-[6deg]'} group-hover:scale-102 group-hover:bg-granite-custom/80`}>
+                    {/* Bottom card */}
+                    <div className={`absolute inset-0 bg-granite-custom rounded-2xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] shadow-[0px_12px_20px_0px_rgba(10,18,36,0.05)] group-hover:shadow-[0px_16px_28px_0px_rgba(10,18,36,0.08)] -z-20 transition-all ${
+                      idx % 2 === 0 
+                        ? '-rotate-[5deg] translate-y-[8px] group-hover:-rotate-[7deg] group-hover:translate-y-[10px] group-hover:-translate-x-[3px]' 
+                        : 'rotate-[6deg] -translate-y-[6px] group-hover:rotate-[8deg] group-hover:translate-y-[2px] group-hover:translate-x-[0px]'
+                    }`} />
+                    
+                    {/* Mid card */}
+                    <div className={`absolute inset-0 bg-granite-custom rounded-2xl shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)] shadow-[0px_12px_20px_0px_rgba(10,18,36,0.05)] group-hover:shadow-[0px_16px_28px_0px_rgba(10,18,36,0.08)] -z-10 transition-all ${
+                      idx % 2 === 0 
+                        ? 'rotate-[2deg] -translate-y-[8px] group-hover:rotate-[4deg] group-hover:-translate-y-[15px] group-hover:-translate-x-[3px]' 
+                        : '-rotate-[4deg] -translate-y-[6px] group-hover:-rotate-[6deg] group-hover:-translate-y-[13px] group-hover:-translate-x-[3px]'
+                    }`} />
+                    
+                    {/* Front card */}
+                    <div className={`relative w-full h-full bg-granite-custom rounded-2xl shadow-[0px_12px_20px_0px_rgba(10,18,36,0.05)] group-hover:shadow-[0px_16px_28px_0px_rgba(10,18,36,0.08)] transition-all overflow-hidden flex items-center justify-center group-hover:-translate-y-[6px] group-hover:scale-100 after:absolute after:inset-0 after:rounded-2xl after:border after:border-white/5 after:pointer-events-none`}>
                       {deck.image ? (
-                        <img src={deck.image} alt="Deck" className="w-full h-full object-cover" draggable="false" />
+                        <img src={deck.image} alt="Deck" className="w-full h-full object-cover rounded-xl" draggable="false" />
                       ) : null}
                     </div>
                   </div>
@@ -70,7 +84,7 @@ export const DecksPage: React.FC<DecksPageProps> = ({ onCreateDeck }) => {
               aria-label="Create deck"
             >
               <div className="w-[164px] h-[196px] flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full bg-semidark-custom hover:bg-granite-custom transition-colors flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full plus-button-circle flex items-center justify-center">
                   <img src={PlusIcon} alt="Create deck" className="w-6 h-6" />
                 </div>
               </div>
