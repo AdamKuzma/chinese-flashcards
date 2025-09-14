@@ -12,6 +12,7 @@ import BookmarkIcon from '../assets/Bookmark.svg';
 import MicIcon from '../assets/Mic.svg';
 import { audioCache } from '../utils/audioCache';
 import { generateSentence } from '../utils/sentenceGenerator';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface FlashcardProps {
   card: Card;
@@ -22,7 +23,6 @@ interface FlashcardProps {
   onPrevious?: () => void;
   showNavigation?: boolean;
   onFlipCard?: number;
-  onSentenceClick?: () => void;
   onPracticeClick?: () => void;
 }
 
@@ -32,7 +32,6 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   onShowAnswer,
   onReview,
   onFlipCard,
-  onSentenceClick,
   onPracticeClick,
 }) => {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
@@ -44,10 +43,16 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showSentence, setShowSentence] = useState(false);
+  const [showSentenceContainer, setShowSentenceContainer] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [sentenceData, setSentenceData] = useState<{chinese: string, english: string} | null>(null);
   const [isLoadingSentence, setIsLoadingSentence] = useState(false);
   const [isPlayingSentence, setIsPlayingSentence] = useState(false);
   const [showPracticeModal, setShowPracticeModal] = useState(false);
+  const [displayedChinese, setDisplayedChinese] = useState('');
+  const [showEnglishAndActions, setShowEnglishAndActions] = useState(false);
+  const [showIcons, setShowIcons] = useState(false);
+  const [isContentVisible, setIsContentVisible] = useState(true);
 
   // Get review session state from store
   const { isReviewing, reviewAll, currentCardFlipped, toggleCardFlip, setCardFlip, showAlgorithmDetails } = useFlashcardStore();
@@ -104,9 +109,15 @@ export const Flashcard: React.FC<FlashcardProps> = ({
       setDisplayBack(false);
       // Reset sentence when card changes
       setShowSentence(false);
+      setShowSentenceContainer(false);
+      setIsExpanded(false);
       setSentenceData(null);
       setIsLoadingSentence(false);
       setIsPlayingSentence(false);
+      setDisplayedChinese('');
+      setShowEnglishAndActions(false);
+      setShowIcons(false);
+      setIsContentVisible(true);
       // Force immediate state update with longer delay to ensure state settles
       setTimeout(() => {
         setIsTransitioning(false);
@@ -213,6 +224,91 @@ export const Flashcard: React.FC<FlashcardProps> = ({
     }
   };
 
+  const typewriterEffect = (text: string, speed: number = 50) => {
+    setDisplayedChinese('');
+    setShowEnglishAndActions(false);
+    setShowIcons(false);
+    setIsContentVisible(true);
+    
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayedChinese(text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(timer);
+        // After typewriter completes, show English text
+        setTimeout(() => {
+          setShowEnglishAndActions(true);
+          // After English text transition completes, show icons
+          setTimeout(() => {
+            setShowIcons(true);
+          }, 300); // Wait for English text transition (0.3s)
+        }, 500);
+      }
+    }, speed);
+  };
+
+  const handleSentenceClick = async () => {
+    if (!card) return;
+    
+    if (showSentence) {
+      // First fade out content
+      setIsContentVisible(false);
+      
+      // Then scale down container
+      setTimeout(() => {
+        setIsExpanded(false);
+      }, 200); // Wait for content fade out
+      
+      // Finally move up and fade out
+      setTimeout(() => {
+        setShowSentence(false);
+        setShowSentenceContainer(false);
+        setIsLoadingSentence(false);
+        setDisplayedChinese('');
+        setShowEnglishAndActions(false);
+        setShowIcons(false);
+        setIsContentVisible(true); // Reset for next time
+      }, 400); // Wait for scale down animation
+    } else {
+      // Start the animation sequence
+      setShowSentenceContainer(true);
+      setShowSentence(true);
+      
+      // After initial animation (opacity + y), expand the container
+      setTimeout(() => {
+        setIsExpanded(true);
+        
+        // After expansion completes, start loading
+        setTimeout(() => {
+          setIsLoadingSentence(true);
+          
+          // Generate sentence using OpenAI API
+          generateSentence(card.hanzi, card.english)
+            .then((data) => {
+              setSentenceData(data);
+              setIsLoadingSentence(false);
+              // Start typewriter effect
+              typewriterEffect(data.chinese);
+            })
+            .catch((error) => {
+              console.error('Error generating sentence:', error);
+              // Fallback to mock data on error
+              const fallbackData = {
+                chinese: `${card.hanzi}是一个很好的词。`,
+                english: `${card.english} is a good word.`
+              };
+              setSentenceData(fallbackData);
+              setIsLoadingSentence(false);
+              // Start typewriter effect
+              typewriterEffect(fallbackData.chinese);
+            });
+        }, 400); // Wait for expansion animation to complete
+      }, 100); // Wait for initial animation to complete
+    }
+  };
+
   const playSentenceAudio = async () => {
     if (isPlayingSentence || !sentenceData) return;
     
@@ -260,13 +356,16 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   return (
     <div className="max-w-2xl mx-auto px-16">
       {/* Card Display */}
-      <div className="mb-6 perspective-1000">
+      <div className="mb-8 perspective-1000">
         <div className={`${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`} style={{ transform: isTransitioning ? 'none' : `rotateX(${enterRotationX}deg)` }}>
-          <div className={`relative w-[272px] h-[325px] mx-auto rounded-2xl preserve-3d cursor-pointer ${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`}
-               style={{ transform: isTransitioning ? 'none' : (displayBack ? 'rotateY(180deg)' : 'rotateY(0deg)') }}
+          <div className={`relative w-[300px] h-[354px] mx-auto preserve-3d cursor-pointer ${isTransitioning ? '!transition-none !transform-none' : 'transition-transform duration-300'}`}
+               style={{ 
+                 borderRadius: '24px',
+                 transform: isTransitioning ? 'none' : (displayBack ? 'rotateY(180deg)' : 'rotateY(0deg)')
+               }}
                onClick={() => { if (isShowingAnswer) setDisplayBack(prev => !prev); }}>
             {/* Front of card */}
-            <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center backface-hidden">
+            <div className="absolute inset-0 bg-granite-custom flex items-center justify-center backface-hidden" style={{ borderRadius: '24px' }}>
               <button
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent card flip when clicking sound button
@@ -286,7 +385,7 @@ export const Flashcard: React.FC<FlashcardProps> = ({
               </div>
             </div>
             {/* Back of card */}
-            <div className="absolute inset-0 bg-granite-custom rounded-2xl flex items-center justify-center backface-hidden" style={{ transform: 'rotateY(180deg)' }}>
+            <div className="absolute inset-0 bg-granite-custom flex items-center justify-center backface-hidden" style={{ transform: 'rotateY(180deg)', borderRadius: '24px' }}>
               <div 
                 className="text-2xl text-light-custom font-medium text-center px-4 cursor-text"
                 onClick={(e) => e.stopPropagation()} // Prevent card flip when clicking on text
@@ -350,114 +449,181 @@ export const Flashcard: React.FC<FlashcardProps> = ({
             </Button>
           </div>
           
-          {/* Sentence Card */}
-          {showSentence && (
-            <div className={`mt-12 p-4 py-3 border border-granite-custom rounded-xl ${isLoadingSentence ? 'bg-white sentence-loading' : 'bg-granite-custom/50'}`}>
-              {isLoadingSentence ? (
-                <div className="flex justify-between items-middle">
-                  <div className="flex-1 text-left pl-2">
-                    <div className="text-lg text-light-custom leading-7 min-h-[1.75rem]"></div>
-                    <div className="text-sm text-gray-custom leading-5 min-h-[1.25rem]"></div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <div className="w-8 h-8"></div>
-                    <div className="w-8 h-8"></div>
-                    <div className="w-8 h-8"></div>
-                  </div>
-                </div>
-              ) : sentenceData ? (
-                <div className="flex justify-between items-middle">
-                  <div className="flex-1 text-left pl-2">
-                    <div className="text-lg text-light-custom">
-                      {sentenceData.chinese}
-                    </div>
-                    <div className="text-sm text-gray-custom">
-                      {sentenceData.english}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={playSentenceAudio}
-                      disabled={isPlayingSentence}
-                      className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <img src={SoundIcon} alt="Sound" className="w-4 h-4" />
-                      <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isPlayingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
-                        Read aloud
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => {
-                        // TODO: Save sentence
-                        console.log('Bookmark');
-                      }}
-                      className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors"
-                    >
-                      <img src={BookmarkIcon} alt="Save" className="w-5 h-5 icon-silver" />
-                      <div className="pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                        Bookmark
-                      </div>
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (isLoadingSentence) return; // Prevent multiple requests
-                        
-                        setIsLoadingSentence(true);
-                        try {
-                          const data = await generateSentence(card.hanzi, card.english);
-                          setSentenceData(data);
-                        } catch (error) {
-                          console.error('Error regenerating sentence:', error);
-                          // Fallback to mock data on error
-                          setSentenceData({
-                            chinese: `${card.hanzi}是一个很好的词。`,
-                            english: `${card.english} is a good word.`
-                          });
-                        } finally {
-                          setIsLoadingSentence(false);
-                        }
-                      }}
-                      disabled={isLoadingSentence}
-                      className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <img src={RefreshIcon} alt="Refresh" className="w-5 h-5 icon-silver" />
-                      <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isLoadingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
-                        New sentence
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          )}
+          {/* Example and Practice Buttons */}
+          <div className="flex justify-center gap-0 mt-14">
+            <Button
+              onClick={handleSentenceClick}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5 bg-transparent px-4 py-2 hover:bg-white/5 border-0 !rounded-full"
+            >
+              <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" style={{ filter: 'brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
+              Example
+            </Button>
+            <Button
+              onClick={onPracticeClick}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5 bg-transparent px-4 py-2 hover:bg-white/5 border-0 !rounded-full"
+            >
+              <img src={MicIcon} alt="Mic" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
+              Practice
+            </Button>
+          </div>
           
-          {/* Practice and Sentence Buttons */}
-          {(onSentenceClick || onPracticeClick) && (
-            <div className="flex justify-center gap-1 mt-8">
-              {onSentenceClick && (
-                <Button
-                  onClick={onSentenceClick}
-                  size="sm"
-                  variant="secondary"
-                  className="flex items-center gap-1.5"
+          {/* Sentence Card */}
+          <AnimatePresence>
+            {showSentenceContainer && (
+              <motion.div
+                initial={{
+                  opacity: 0,
+                  width: 220,
+                  height: 34,
+                  y: 0
+                }}
+                animate={{
+                  opacity: 1,
+                  y: 20,
+                  width: isExpanded ? 544 : 220,
+                  height: isExpanded ? 72 : 34
+                }}
+                transition={{
+                  opacity: { duration: 0.2 },
+                  y: { duration: 0.2 },
+                  width: { 
+                    delay: 0.01, 
+                    duration: 0.4, 
+                    type: "spring", 
+                    stiffness: 200, 
+                    damping: 20 
+                  },
+                  height: { 
+                    delay: 0.01, 
+                    duration: 0.4, 
+                    type: "spring", 
+                    stiffness: 200, 
+                    damping: 20 
+                  }
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -20,
+                  width: 220,
+                  height: 34
+                }}
+                className={`mt-2 mx-auto border border-granite-custom rounded-xl bg-white/2 ${sentenceData ? 'bg-granite-custom/50' : ''}`}
+                style={{ width: isExpanded ? 544 : 220 }}
+              >
+                <motion.div 
+                  className="p-4 py-3"
+                  animate={{ opacity: isContentVisible ? 1 : 0 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" />
-                  Sentence
-                </Button>
-              )}
-              {onPracticeClick && (
-                <Button
-                  onClick={onPracticeClick}
-                  size="sm"
-                  variant="secondary"
-                  className="flex items-center gap-1.5"
-                >
-                  <img src={MicIcon} alt="Mic" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
-                  Practice
-                </Button>
-              )}
-            </div>
-          )}
+                  {isLoadingSentence ? (
+                    <div className="flex items-center justify-start h-full">
+                      <motion.div
+                        className="w-2.5 h-2.5 bg-white rounded-full ml-1.5 mt-2"
+                        animate={{
+                          scale: [1, 1.3, 1],
+                        }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    </div>
+                  ) : sentenceData ? (
+                    <div className="flex justify-between items-middle">
+                      <div className="flex-1 text-left pl-2">
+                        <div className="text-lg text-light-custom">
+                          {displayedChinese}
+                          {displayedChinese.length < sentenceData.chinese.length && (
+                            <span className="animate-pulse">|</span>
+                          )}
+                        </div>
+                        {showEnglishAndActions && (
+                          <motion.div 
+                            className="text-sm text-gray-custom"
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                          >
+                            {sentenceData.english}
+                          </motion.div>
+                        )}
+                      </div>
+                      {showIcons && (
+                        <motion.div 
+                          className="flex items-center gap-2 ml-4"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
+                        >
+                          <button
+                            onClick={playSentenceAudio}
+                            disabled={isPlayingSentence}
+                            className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <img src={SoundIcon} alt="Sound" className="w-4 h-4" />
+                            <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isPlayingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                              Read aloud
+                            </div>
+                          </button>
+                          <button
+                            onClick={() => {
+                              // TODO: Save sentence
+                              console.log('Bookmark');
+                            }}
+                            className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors"
+                          >
+                            <img src={BookmarkIcon} alt="Save" className="w-5 h-5 icon-silver" />
+                            <div className="pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Bookmark
+                            </div>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (isLoadingSentence) return; // Prevent multiple requests
+                              
+                              setIsLoadingSentence(true);
+                              setDisplayedChinese('');
+                              setShowEnglishAndActions(false);
+                              setShowIcons(false);
+                              setIsContentVisible(true);
+                              try {
+                                const data = await generateSentence(card.hanzi, card.english);
+                                setSentenceData(data);
+                                setIsLoadingSentence(false);
+                                typewriterEffect(data.chinese);
+                              } catch (error) {
+                                console.error('Error regenerating sentence:', error);
+                                // Fallback to mock data on error
+                                const fallbackData = {
+                                  chinese: `${card.hanzi}是一个很好的词。`,
+                                  english: `${card.english} is a good word.`
+                                };
+                                setSentenceData(fallbackData);
+                                setIsLoadingSentence(false);
+                                typewriterEffect(fallbackData.chinese);
+                              }
+                            }}
+                            disabled={isLoadingSentence}
+                            className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <img src={RefreshIcon} alt="Refresh" className="w-5 h-5 icon-silver" />
+                            <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isLoadingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                              New sentence
+                            </div>
+                          </button>
+                        </motion.div>
+                      )}
+                    </div>
+                  ) : null}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
         </div>
       )}
