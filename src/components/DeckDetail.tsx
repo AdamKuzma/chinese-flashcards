@@ -217,12 +217,14 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({ deckId, onStartLesson, o
                             <span className="text-2xl text-light-custom font-medium">{num}</span>
                           )}
                           {!isLocked && (
-                            <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full overflow-hidden">
+                            <div className="absolute left-5 right-5 bottom-5 h-2.5 bg-white/10 rounded-full">
                               <div 
                                 className="h-full rounded-full" 
                                 style={{ 
                                   width: pct + '%',
-                                  backgroundColor: pct === 100 ? '#A0C700' : 'var(--color-progress)'
+                                  backgroundColor: pct === 100 ? undefined : 'var(--color-progress)',
+                                  background: pct === 100 ? 'linear-gradient(90deg, #F0CAAF 0%, #FF98FC 100%)' : 'var(--color-progress)',
+                                  boxShadow: pct === 100 ? '0 0 4px rgba(240, 202, 175, 0.3), 0 0 8px rgba(255, 152, 252, 0.2)' : undefined
                                 }} 
                               />
                             </div>

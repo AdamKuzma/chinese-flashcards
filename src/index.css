@@ -27,7 +27,7 @@
   --color-gray-rgb: 136 136 136;
   --color-granite-rgb: 51 51 51;
   --color-dark-rgb: 34 34 34;
-  --color-progress: #F5B206;
+  --color-progress: #EEEEEE;
 }
 
 a {
@@ -84,7 +84,7 @@ button {
 }
 
 .text-silver-custom {
-  color: var(--color-silver) !important;
+  color: var(--color-silver);
 }
 
 .border-gray-custom {

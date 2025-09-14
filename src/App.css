@@ -24,9 +24,9 @@
   --color-semidark-rgb: 40 40 40;
   --color-dark: #222222;
   --color-dark-rgb: 34 34 34;
-  --color-progress: #F5B206;
+  --color-progress: #EEEEEE;
   --color-complete: #3F3827;
-  --color-progress-rgb: 245 178 6;
+  --color-progress-rgb: 238 238 238;
 }
 
 /* For 3D flip animation */
@@ -290,5 +290,10 @@ button:not(:disabled) {
 
 .plus-button-circle:active {
   transform: scale(0.95);
+}
+
+/* Custom button text override for review buttons */
+.review-button-light {
+  color: var(--color-light) !important;
 }
 

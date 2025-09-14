@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useFlashcardStore } from '../store';
-import { Flashcard, Button, Modal } from './index';
+import { Flashcard, Button, Modal, DictationModal } from './index';
 import { ReviewQuality } from '../types';
 import catImage from '../assets/cat.png';
+import { generateSentence } from '../utils/sentenceGenerator';
+import BookIcon from '../assets/book.svg';
+import MicIcon from '../assets/Mic.svg';
+import SoundIcon from '../assets/Sound.svg';
+import BookmarkIcon from '../assets/Bookmark.svg';
+import RefreshIcon from '../assets/Refresh.svg';
 
 interface ReviewViewProps {
   onBackToDeck?: () => void;
@@ -15,6 +21,11 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
   const [completedSessionCount, setCompletedSessionCount] = useState<number>(0);
   const [showCompletionState, setShowCompletionState] = useState(false);
   const [flipCardTrigger, setFlipCardTrigger] = useState<number>(0);
+  const [showSentence, setShowSentence] = useState(false);
+  const [sentenceData, setSentenceData] = useState<{chinese: string, english: string} | null>(null);
+  const [isLoadingSentence, setIsLoadingSentence] = useState(false);
+  const [isPlayingSentence, setIsPlayingSentence] = useState(false);
+  const [showPracticeModal, setShowPracticeModal] = useState(false);
 
   const {
     isReviewing,
@@ -183,6 +194,81 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
     handleBackToDeck();
   };
 
+  const handleSentenceClick = async () => {
+    if (!currentCard) return;
+    
+    if (showSentence) {
+      setShowSentence(false);
+      setIsLoadingSentence(false);
+    } else {
+      setIsLoadingSentence(true);
+      setShowSentence(true);
+      
+      // Generate sentence using OpenAI API
+      try {
+        const data = await generateSentence(currentCard.hanzi, currentCard.english);
+        setSentenceData(data);
+      } catch (error) {
+        console.error('Error generating sentence:', error);
+        // Fallback to mock data on error
+        setSentenceData({
+          chinese: `${currentCard.hanzi}是一个很好的词。`,
+          english: `${currentCard.english} is a good word.`
+        });
+      } finally {
+        setIsLoadingSentence(false);
+      }
+    }
+  };
+
+  const handlePracticeClick = () => {
+    setShowPracticeModal(true);
+  };
+
+  const playSentenceAudio = async () => {
+    if (isPlayingSentence || !sentenceData) return;
+    
+    setIsPlayingSentence(true);
+    try {
+      const response = await fetch('https://chinese-flashcards-alpha.vercel.app/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          text: sentenceData.chinese,
+          speakingRate: useFlashcardStore.getState().ttsSettings.speakingRate
+        }),
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        
+        audio.onended = () => {
+          setIsPlayingSentence(false);
+          URL.revokeObjectURL(audioUrl); // Clean up the blob URL
+        };
+        
+        audio.onerror = () => {
+          setIsPlayingSentence(false);
+          URL.revokeObjectURL(audioUrl);
+          console.error('Error playing sentence audio');
+        };
+        
+        await audio.play();
+      } else {
+        console.error('Failed to generate sentence speech');
+        setIsPlayingSentence(false);
+      }
+    } catch (error) {
+      console.error('Error playing sentence audio:', error);
+      setIsPlayingSentence(false);
+    }
+  };
+
   // Show completion state when review is finished
   if (showCompletionState) {
     return (
@@ -321,6 +407,115 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
         onFlipCard={flipCardTrigger}
       />
 
+      {/* Sentence and Practice Buttons Container */}
+      {isShowingAnswer && (
+        <div className="fixed bottom-0 left-1/2 transform -translate-x-1/2 mb-6">
+          <div className="bg-granite-custom rounded-full flex px-1 py-1 items-center shadow-sm">
+            <Button
+              onClick={handleSentenceClick}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5 bg-transparent px-4 py-2 hover:bg-black/20 border-0 review-button-light !rounded-full"
+            >
+              <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" style={{ filter: 'brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
+              Example
+            </Button>
+            <Button
+              onClick={handlePracticeClick}
+              size="sm"
+              variant="secondary"
+              className="flex items-center gap-1.5 bg-transparent px-4 py-2 hover:bg-black/20 border-0 review-button-light !rounded-full"
+            >
+              <img src={MicIcon} alt="Mic" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(90%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
+              Practice
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Sentence Card */}
+      {showSentence && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 max-w-md w-full mx-4">
+          <div className={`p-4 py-3 border border-granite-custom rounded-xl ${isLoadingSentence ? 'bg-white sentence-loading' : 'bg-granite-custom/50'}`}>
+            {isLoadingSentence ? (
+              <div className="flex justify-between items-middle">
+                <div className="flex-1 text-left pl-2">
+                  <div className="text-lg text-light-custom leading-7 min-h-[1.75rem]"></div>
+                  <div className="text-sm text-gray-custom leading-5 min-h-[1.25rem]"></div>
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <div className="w-8 h-8"></div>
+                  <div className="w-8 h-8"></div>
+                  <div className="w-8 h-8"></div>
+                </div>
+              </div>
+            ) : sentenceData ? (
+              <div className="flex justify-between items-middle">
+                <div className="flex-1 text-left pl-2">
+                  <div className="text-lg text-light-custom">
+                    {sentenceData.chinese}
+                  </div>
+                  <div className="text-sm text-gray-custom">
+                    {sentenceData.english}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 ml-4">
+                  <button
+                    onClick={playSentenceAudio}
+                    disabled={isPlayingSentence}
+                    className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <img src={SoundIcon} alt="Sound" className="w-4 h-4" />
+                    <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isPlayingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                      Read aloud
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      // TODO: Save sentence
+                      console.log('Bookmark');
+                    }}
+                    className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors"
+                  >
+                    <img src={BookmarkIcon} alt="Save" className="w-5 h-5 icon-silver" />
+                    <div className="pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Bookmark
+                    </div>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (isLoadingSentence) return; // Prevent multiple requests
+                      
+                      setIsLoadingSentence(true);
+                      try {
+                        const data = await generateSentence(currentCard!.hanzi, currentCard!.english);
+                        setSentenceData(data);
+                      } catch (error) {
+                        console.error('Error regenerating sentence:', error);
+                        // Fallback to mock data on error
+                        setSentenceData({
+                          chinese: `${currentCard!.hanzi}是一个很好的词。`,
+                          english: `${currentCard!.english} is a good word.`
+                        });
+                      } finally {
+                        setIsLoadingSentence(false);
+                      }
+                    }}
+                    disabled={isLoadingSentence}
+                    className="group relative w-8 h-8 flex items-center justify-center text-silver-custom hover:text-light-custom hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <img src={RefreshIcon} alt="Refresh" className="w-5 h-5 icon-silver" />
+                    <div className={`pointer-events-none absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 rounded-lg bg-black/80 text-light-custom text-xs transition-opacity whitespace-nowrap ${isLoadingSentence ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                      New sentence
+                    </div>
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       {/* Quit confirmation modal */}
       <Modal
         isOpen={showQuitModal}
@@ -345,6 +540,13 @@ export const ReviewView: React.FC<ReviewViewProps> = ({ onBackToDeck, onCompleti
           Are you sure you want to quit?
         </p>
       </Modal>
+
+      {/* Practice Modal */}
+      <DictationModal
+        isOpen={showPracticeModal}
+        onClose={() => setShowPracticeModal(false)}
+        chineseWord={currentCard?.hanzi || ''}
+      />
     </>
   );
 };

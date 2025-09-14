@@ -22,6 +22,8 @@ interface FlashcardProps {
   onPrevious?: () => void;
   showNavigation?: boolean;
   onFlipCard?: number;
+  onSentenceClick?: () => void;
+  onPracticeClick?: () => void;
 }
 
 export const Flashcard: React.FC<FlashcardProps> = ({
@@ -30,6 +32,8 @@ export const Flashcard: React.FC<FlashcardProps> = ({
   onShowAnswer,
   onReview,
   onFlipCard,
+  onSentenceClick,
+  onPracticeClick,
 }) => {
   const [showDebugInfo, setShowDebugInfo] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -428,49 +432,33 @@ export const Flashcard: React.FC<FlashcardProps> = ({
           )}
           
           {/* Practice and Sentence Buttons */}
-          <div className="flex justify-center gap-1 mt-8">
-          <Button
-              onClick={async () => {
-                if (showSentence) {
-                  setShowSentence(false);
-                  setIsLoadingSentence(false);
-                } else {
-                  setIsLoadingSentence(true);
-                  setShowSentence(true);
-                  
-                  // Generate sentence using OpenAI API
-                  try {
-                    const data = await generateSentence(card.hanzi, card.english);
-                    setSentenceData(data);
-                  } catch (error) {
-                    console.error('Error generating sentence:', error);
-                    // Fallback to mock data on error
-                    setSentenceData({
-                      chinese: `${card.hanzi}是一个很好的词。`,
-                      english: `${card.english} is a good word.`
-                    });
-                  } finally {
-                    setIsLoadingSentence(false);
-                  }
-                }
-              }}
-              size="sm"
-              variant="secondary"
-              className="flex items-center gap-1.5"
-            >
-              <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" />
-              Sentence
-            </Button>
-            <Button
-              onClick={() => setShowPracticeModal(true)}
-              size="sm"
-              variant="secondary"
-              className="flex items-center gap-1.5"
-            >
-              <img src={MicIcon} alt="Mic" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
-              Practice
-            </Button>
-          </div>
+          {(onSentenceClick || onPracticeClick) && (
+            <div className="flex justify-center gap-1 mt-8">
+              {onSentenceClick && (
+                <Button
+                  onClick={onSentenceClick}
+                  size="sm"
+                  variant="secondary"
+                  className="flex items-center gap-1.5"
+                >
+                  <img src={BookIcon} alt="Book" className="w-4.5 h-4.5" />
+                  Sentence
+                </Button>
+              )}
+              {onPracticeClick && (
+                <Button
+                  onClick={onPracticeClick}
+                  size="sm"
+                  variant="secondary"
+                  className="flex items-center gap-1.5"
+                >
+                  <img src={MicIcon} alt="Mic" className="w-5 h-5" style={{ filter: 'brightness(0) saturate(100%) invert(53%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%)' }} />
+                  Practice
+                </Button>
+              )}
+            </div>
+          )}
+          
         </div>
       )}
 
